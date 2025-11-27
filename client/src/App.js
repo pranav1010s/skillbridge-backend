@@ -11,7 +11,7 @@ import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import BusinessDetail from './pages/BusinessDetail';
-import Applications from './pages/Applications';
+import AICVEditor from './pages/AICVEditor';
 import './App.css';
 
 const theme = createTheme({
@@ -59,46 +59,47 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route 
-                path="/onboarding" 
+              <Route
+                path="/onboarding"
                 element={
                   <ProtectedRoute>
                     <Onboarding />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/dashboard" 
+              <Route
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/profile" 
+              <Route
+                path="/profile"
                 element={
                   <ProtectedRoute>
                     <Profile />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/business/:id" 
+              <Route
+                path="/business/:id"
                 element={
                   <ProtectedRoute>
                     <BusinessDetail />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/applications" 
+              <Route
+                path="/ai-cv-editor"
                 element={
                   <ProtectedRoute>
-                    <Applications />
+                    <AICVEditor />
                   </ProtectedRoute>
-                } 
+                }
               />
+              {/* Applications route removed */}
             </Routes>
           </div>
         </Router>

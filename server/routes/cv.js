@@ -6,7 +6,7 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const aiService = require('../services/aiService');
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['.pdf', '.doc', '.docx'];
     const fileExt = path.extname(file.originalname).toLowerCase();
-    
+
     if (allowedTypes.includes(fileExt)) {
       cb(null, true);
     } else {
@@ -42,12 +42,6 @@ const upload = multer({
     }
   }
 });
-
-// Google Gemini API configuration
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
-
-console.log('Gemini API Key loaded:', GEMINI_API_KEY ? 'Yes' : 'No');
 
 // Function to extract text from uploaded file
 async function extractTextFromFile(filePath, fileType) {
@@ -60,88 +54,16 @@ async function extractTextFromFile(filePath, fileType) {
       const result = await mammoth.extractRawText({ path: filePath });
       return result.value;
     } else if (fileType === '.doc') {
-      // For .doc files, we'll use a simpler approach
       const result = await mammoth.extractRawText({ path: filePath });
       return result.value;
     }
-    throw new Error('Unsupported file type');
+    throw new Error(`Unsupported file type: ${fileType}`);
   } catch (error) {
     console.error('Text extraction error:', error);
-    throw new Error('Failed to extract text from file');
-  }
-}
-
-// Function to parse CV using Google Gemini
-async function parseCVWithAI(cvText) {
-  try {
-    if (!GEMINI_API_KEY || !genAI) {
-      console.log('Gemini API key missing');
-      throw new Error('Gemini API key not configured');
+    if (error.message.includes('Unsupported file type')) {
+      throw error;
     }
-
-    console.log('Gemini API key found, making request...');
-
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
-    const prompt = `
-You are an expert CV/Resume parser. Extract the following information from this CV text and return it as a JSON object:
-
-{
-  "personalInfo": {
-    "firstName": "string",
-    "lastName": "string",
-    "email": "string",
-    "phone": "string"
-  },
-  "education": {
-    "university": "string",
-    "degree": "string",
-    "major": "string",
-    "graduationYear": "string",
-    "gpa": "number or null"
-  },
-  "skills": ["array of skills as strings"],
-  "experience": [
-    {
-      "company": "string",
-      "position": "string",
-      "startDate": "string",
-      "endDate": "string",
-      "description": "string"
-    }
-  ],
-  "projects": [
-    {
-      "name": "string",
-      "description": "string",
-      "technologies": ["array of technologies"]
-    }
-  ],
-  "certifications": ["array of certifications"],
-  "languages": ["array of languages"]
-}
-
-Only extract information that is clearly present in the CV. Use null for missing fields. Return ONLY the JSON object, no additional text. Here's the CV text:
-
-${cvText}
-`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const aiResponse = response.text();
-    
-    console.log('Gemini response:', aiResponse);
-    
-    // Extract JSON from the response
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in AI response');
-    }
-
-    return JSON.parse(jsonMatch[0]);
-  } catch (error) {
-    console.error('AI parsing error:', error);
-    throw new Error('Failed to parse CV with AI: ' + error.message);
+    throw new Error(`Failed to extract text from file: ${error.message}`);
   }
 }
 
@@ -169,7 +91,7 @@ router.post('/upload', (req, res, next) => {
 async function handleCVUpload(req, res) {
   try {
     console.log('CV upload started');
-    
+
     if (!req.file) {
       console.log('No file uploaded');
       return res.status(400).json({ message: 'No file uploaded' });
@@ -184,10 +106,10 @@ async function handleCVUpload(req, res) {
     const cvText = await extractTextFromFile(filePath, fileType);
     console.log('Text extracted, length:', cvText.length);
 
-    // Parse CV with AI
-    console.log('Parsing CV with AI...');
-    const parsedData = await parseCVWithAI(cvText);
-    console.log('AI parsing completed:', parsedData);
+    // Parse CV with AI Service
+    console.log('Parsing CV with AI Service...');
+    const parsedData = await aiService.parseCV(cvText);
+    console.log('AI parsing completed');
 
     // Update user profile with parsed data
     const user = await User.findById(req.user.id);
@@ -198,35 +120,27 @@ async function handleCVUpload(req, res) {
     // Update user fields with parsed data - with validation
     try {
       // Update personal information
-      if (parsedData.personalInfo?.firstName && typeof parsedData.personalInfo.firstName === 'string') {
-        user.firstName = parsedData.personalInfo.firstName;
+      if (parsedData.personalInfo?.firstName) user.firstName = parsedData.personalInfo.firstName;
+      if (parsedData.personalInfo?.lastName) user.lastName = parsedData.personalInfo.lastName;
+      if (parsedData.personalInfo?.email && user.email !== parsedData.personalInfo.email) {
+        console.log('Note: CV contains different email than profile:', parsedData.personalInfo.email);
       }
-      if (parsedData.personalInfo?.lastName && typeof parsedData.personalInfo.lastName === 'string') {
-        user.lastName = parsedData.personalInfo.lastName;
+
+      // Update professional summary
+      if (parsedData.summary && parsedData.summary.trim()) {
+        user.summary = parsedData.summary.trim();
       }
-      if (parsedData.personalInfo?.email && typeof parsedData.personalInfo.email === 'string') {
-        // Only update email if it's different from current one
-        if (user.email !== parsedData.personalInfo.email) {
-          console.log('Note: CV contains different email than profile:', parsedData.personalInfo.email);
-        }
-      }
-      
+
       // Update education information
-      if (parsedData.education?.university && typeof parsedData.education.university === 'string') {
-        user.university = parsedData.education.university;
-      }
-      if (parsedData.education?.major && typeof parsedData.education.major === 'string') {
-        user.major = parsedData.education.major;
-      }
-      if (parsedData.education?.degree && typeof parsedData.education.degree === 'string') {
-        // Map degree to year if possible
+      if (parsedData.education?.university) user.university = parsedData.education.university;
+      if (parsedData.education?.major) user.major = parsedData.education.major;
+
+      if (parsedData.education?.degree) {
         const degreeToYear = {
-          'bachelor': '3rd Year',
-          'undergraduate': '2nd Year', 
-          'masters': 'Graduate',
-          'master': 'Graduate',
-          'phd': 'PhD',
-          'doctorate': 'PhD'
+          'bachelor': '3rd Year', 'bsc': '3rd Year', 'ba': '3rd Year',
+          'undergraduate': '2nd Year', 'masters': 'Graduate', 'master': 'Graduate',
+          'msc': 'Graduate', 'ma': 'Graduate', 'mba': 'Graduate',
+          'phd': 'PhD', 'doctorate': 'PhD', 'associate': '2nd Year'
         };
         const lowerDegree = parsedData.education.degree.toLowerCase();
         for (const [key, value] of Object.entries(degreeToYear)) {
@@ -236,67 +150,60 @@ async function handleCVUpload(req, res) {
           }
         }
       }
-      if (parsedData.education?.graduationYear && typeof parsedData.education.graduationYear === 'string') {
-        // Convert graduation year to date
+
+      if (parsedData.education?.graduationYear) {
         const gradYear = parseInt(parsedData.education.graduationYear);
         if (gradYear && gradYear > 2020 && gradYear < 2030) {
-          user.expectedGraduation = new Date(gradYear, 5, 1); // June 1st of graduation year
+          user.expectedGraduation = new Date(gradYear, 5, 1);
         }
       }
-      if (parsedData.education?.gpa && typeof parsedData.education.gpa === 'number') {
-        user.gpa = Math.min(parsedData.education.gpa, 4.0); // Cap at 4.0
+
+      if (parsedData.education?.gpa) {
+        user.gpa = Math.min(parsedData.education.gpa, 4.0);
       }
-      
-      // Replace skills (don't merge)
-      if (parsedData.skills && Array.isArray(parsedData.skills) && parsedData.skills.length > 0) {
-        const validSkills = parsedData.skills.filter(skill => typeof skill === 'string' && skill.trim().length > 0);
-        user.skills = [...new Set(validSkills)]; // Replace with new skills only
+
+      // Replace skills
+      if (parsedData.skills && Array.isArray(parsedData.skills)) {
+        const validSkills = parsedData.skills.filter(s => typeof s === 'string' && s.trim());
+        user.skills = [...new Set(validSkills)];
       }
-      
-      // Replace experience (don't merge) - with deduplication
-      if (parsedData.experience && Array.isArray(parsedData.experience) && parsedData.experience.length > 0) {
+
+      // Replace experience
+      if (parsedData.experience && Array.isArray(parsedData.experience)) {
         const validExperience = parsedData.experience
           .filter(exp => exp.company && exp.position)
           .map(exp => ({
-            company: exp.company.trim(),
-            position: exp.position.trim(),
+            company: exp.company ? exp.company.trim() : '',
+            position: exp.position ? exp.position.trim() : '',
             startDate: exp.startDate ? exp.startDate.trim() : '',
             endDate: exp.endDate ? exp.endDate.trim() : '',
             description: exp.description ? exp.description.trim() : '',
             location: exp.location ? exp.location.trim() : ''
           }));
 
-        // Deduplicate experience entries based on company, position, and start date
         const deduplicatedExperience = [];
-        const seen = new Set();
-        
+        const seenExp = new Set();
         for (const exp of validExperience) {
           const key = `${exp.company.toLowerCase()}-${exp.position.toLowerCase()}-${exp.startDate}`;
-          if (!seen.has(key)) {
-            seen.add(key);
+          if (!seenExp.has(key)) {
+            seenExp.add(key);
             deduplicatedExperience.push(exp);
           }
         }
-          
         if (deduplicatedExperience.length > 0) {
-          user.experience = deduplicatedExperience; // Replace with deduplicated experience only
-          
-          // Also update career preferences based on experience
-          const industries = deduplicatedExperience
-            .map(exp => exp.company)
-            .slice(0, 3); // Take first 3 companies
-            
+          user.experience = deduplicatedExperience;
+          const industries = deduplicatedExperience.map(exp => exp.company).slice(0, 3);
           user.careerPreferences = user.careerPreferences || {};
-          user.careerPreferences.industries = [...new Set(industries)]; // Replace industries too
+          user.careerPreferences.industries = [...new Set(industries)];
         }
       }
-      
-      // Replace projects (don't merge) - with deduplication
-      if (parsedData.projects && Array.isArray(parsedData.projects) && parsedData.projects.length > 0) {
+
+      // Replace projects
+      if (parsedData.projects && Array.isArray(parsedData.projects)) {
         const validProjects = parsedData.projects
           .filter(project => project.name)
           .map(project => ({
-            name: project.name.trim(),
+            name: project.name ? project.name.trim() : '',
             description: project.description ? project.description.trim() : '',
             technologies: Array.isArray(project.technologies) ? project.technologies : [],
             url: project.url ? project.url.trim() : '',
@@ -304,39 +211,30 @@ async function handleCVUpload(req, res) {
             endDate: project.endDate ? project.endDate.trim() : ''
           }));
 
-        // Deduplicate projects based on name
         const deduplicatedProjects = [];
-        const seen = new Set();
-        
+        const seenProj = new Set();
         for (const project of validProjects) {
           const key = project.name.toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
+          if (!seenProj.has(key)) {
+            seenProj.add(key);
             deduplicatedProjects.push(project);
           }
         }
-          
         if (deduplicatedProjects.length > 0) {
-          user.projects = deduplicatedProjects; // Replace with deduplicated projects only
+          user.projects = deduplicatedProjects;
         }
       }
-      
-      // Replace certifications (don't merge) - with deduplication
-      if (parsedData.certifications && Array.isArray(parsedData.certifications) && parsedData.certifications.length > 0) {
+
+      // Replace certifications
+      if (parsedData.certifications && Array.isArray(parsedData.certifications)) {
         const validCertifications = parsedData.certifications
           .filter(cert => typeof cert === 'string' || cert.name)
           .map(cert => {
             if (typeof cert === 'string') {
-              return {
-                name: cert.trim(),
-                issuer: '',
-                dateObtained: '',
-                expiryDate: '',
-                credentialId: ''
-              };
+              return { name: cert.trim(), issuer: '', dateObtained: '', expiryDate: '', credentialId: '' };
             }
             return {
-              name: cert.name ? cert.name.trim() : cert,
+              name: cert.name ? cert.name.trim() : '',
               issuer: cert.issuer ? cert.issuer.trim() : '',
               dateObtained: cert.dateObtained ? cert.dateObtained.trim() : '',
               expiryDate: cert.expiryDate ? cert.expiryDate.trim() : '',
@@ -344,55 +242,50 @@ async function handleCVUpload(req, res) {
             };
           });
 
-        // Deduplicate certifications based on name
         const deduplicatedCertifications = [];
-        const seen = new Set();
-        
+        const seenCert = new Set();
         for (const cert of validCertifications) {
           const key = cert.name.toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
+          if (!seenCert.has(key)) {
+            seenCert.add(key);
             deduplicatedCertifications.push(cert);
           }
         }
-          
         if (deduplicatedCertifications.length > 0) {
-          user.certifications = deduplicatedCertifications; // Replace with deduplicated certifications only
+          user.certifications = deduplicatedCertifications;
         }
       }
-      
-      // Replace languages (don't merge) - with deduplication
-      if (parsedData.languages && Array.isArray(parsedData.languages) && parsedData.languages.length > 0) {
+
+      // Replace languages
+      if (parsedData.languages && Array.isArray(parsedData.languages)) {
         const validLanguages = parsedData.languages
           .filter(lang => typeof lang === 'string' && lang.trim().length > 0)
           .map(lang => ({
             language: lang.trim(),
-            proficiency: 'Conversational' // Default proficiency
+            proficiency: 'Conversational'
           }));
 
-        // Deduplicate languages based on language name
         const deduplicatedLanguages = [];
-        const seen = new Set();
-        
+        const seenLang = new Set();
         for (const lang of validLanguages) {
           const key = lang.language.toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
+          if (!seenLang.has(key)) {
+            seenLang.add(key);
             deduplicatedLanguages.push(lang);
           }
         }
-          
         if (deduplicatedLanguages.length > 0) {
-          user.languages = deduplicatedLanguages; // Replace with deduplicated languages only
+          user.languages = deduplicatedLanguages;
         }
       }
-      
+
       console.log('User data after parsing update:', {
         firstName: user.firstName,
         lastName: user.lastName,
         university: user.university,
         major: user.major,
         gpa: user.gpa,
+        summary: user.summary ? 'present' : 'not set',
         skills: user.skills?.length,
         experience: user.experience?.length,
         projects: user.projects?.length,
@@ -407,14 +300,7 @@ async function handleCVUpload(req, res) {
 
     // Store CV file path
     user.resumeUrl = req.file.filename;
-
-    // Skip profile completion check for now to avoid casting error
-    console.log('Skipping profile completion update to avoid casting error');
-
     await user.save();
-
-    // Clean up uploaded file (optional - keep for now)
-    // fs.unlinkSync(filePath);
 
     res.json({
       success: true,
@@ -443,19 +329,154 @@ async function handleCVUpload(req, res) {
     });
 
   } catch (error) {
-    console.error('CV upload error:', error);
-    
+    console.error('CV upload error details:', error);
+    console.error('Error stack:', error.stack);
+
     // Clean up file if upload failed
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Failed to delete file after error:', unlinkError);
+      }
     }
 
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Failed to process CV',
-      error: error.message 
+      error: error.message,
+      details: error.stack // Temporary for debugging
     });
   }
 }
+
+// @route   POST /api/cv/analyze
+// @desc    Analyze uploaded CV
+// @access  Private
+router.post('/analyze', auth, async (req, res) => {
+  try {
+    const { cvData } = req.body;
+    if (!cvData) {
+      return res.status(400).json({ success: false, message: 'CV data is required' });
+    }
+
+    const analysis = await aiService.analyzeCV(cvData);
+    res.json({ success: true, analysis });
+  } catch (error) {
+    console.error('CV analysis error:', error);
+    res.status(500).json({ message: 'Failed to analyze CV', error: error.message });
+  }
+});
+
+// @route   POST /api/cv/chat
+// @desc    Interactive chat for CV editing
+// @access  Private
+router.post('/chat', auth, async (req, res) => {
+  try {
+    const { message, cvData, conversationHistory } = req.body;
+
+    if (!message || !cvData) {
+      return res.status(400).json({ success: false, message: 'Message and CV data are required' });
+    }
+
+    // Simple in-memory cache for chat responses
+    // Key: userId + message (normalized)
+    // Value: { response: string, timestamp: number }
+    if (!global.chatCache) {
+      global.chatCache = new Map();
+    }
+
+    const cacheKey = `${req.user.id}-${message.trim().toLowerCase()}`;
+    const cachedItem = global.chatCache.get(cacheKey);
+    const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+    if (cachedItem && (Date.now() - cachedItem.timestamp < CACHE_TTL)) {
+      console.log('Returning cached response for:', message);
+      return res.json({
+        success: true,
+        reply: cachedItem.response,
+        isUpdateRequest: false,
+        fromCache: true
+      });
+    }
+
+    const aiResponse = await aiService.chat(message, cvData, conversationHistory);
+
+    console.log('AI chat response received successfully');
+    console.log('Has updates:', aiResponse.hasUpdates);
+
+    // If the AI returned CV updates, save them to the database
+    let updatedCvData = null;
+    if (aiResponse.hasUpdates && aiResponse.cvUpdates) {
+      try {
+        console.log('Applying CV updates:', JSON.stringify(aiResponse.cvUpdates));
+
+        // Merge the updates with existing CV data
+        const updates = {};
+
+        // Handle each field in cvUpdates
+        for (const [key, value] of Object.entries(aiResponse.cvUpdates)) {
+          updates[key] = value;
+        }
+
+        // Update the user profile in the database
+        const user = await User.findByIdAndUpdate(
+          req.user.id,
+          { $set: updates },
+          { new: true, runValidators: true }
+        );
+
+        if (user) {
+          updatedCvData = user;
+          console.log('CV updated successfully in database');
+        }
+      } catch (error) {
+        console.error('Error updating CV in database:', error);
+        // Continue anyway, we'll still return the AI's response
+      }
+    }
+
+    // Store in cache (only for non-edit requests)
+    if (!aiResponse.hasUpdates && global.chatCache) {
+      // Limit cache size to prevent memory leaks
+      if (global.chatCache.size > 1000) {
+        const firstKey = global.chatCache.keys().next().value;
+        global.chatCache.delete(firstKey);
+      }
+      global.chatCache.set(cacheKey, {
+        response: aiResponse.reply || aiResponse,
+        timestamp: Date.now()
+      });
+    }
+
+    res.json({
+      success: true,
+      reply: aiResponse.reply || aiResponse,
+      isUpdateRequest: aiResponse.hasUpdates || false,
+      updatedCvData: updatedCvData
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ message: 'Failed to process chat message', error: error.message });
+  }
+});
+
+// @route   POST /api/cv/enhance
+// @desc    Enhance CV content
+// @access  Private
+router.post('/enhance', auth, async (req, res) => {
+  try {
+    const { section, content } = req.body;
+    if (!section || !content) {
+      return res.status(400).json({ message: 'Section and content are required' });
+    }
+
+    const enhanced = await aiService.enhanceSection(section, content);
+    res.json({ success: true, enhanced, section });
+  } catch (error) {
+    console.error('Enhancement error:', error);
+    res.status(500).json({ message: 'Failed to enhance content', error: error.message });
+  }
+});
 
 // @route   GET /api/cv/download/:filename
 // @desc    Download CV file
@@ -488,23 +509,16 @@ router.get('/download/:filename', auth, async (req, res) => {
 router.delete('/delete', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     if (user.resumeUrl) {
       const filePath = path.join(__dirname, '../../uploads/cvs', user.resumeUrl);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       user.resumeUrl = null;
       await user.save();
     }
 
-    res.json({
-      success: true,
-      message: 'CV deleted successfully'
-    });
+    res.json({ success: true, message: 'CV deleted successfully' });
   } catch (error) {
     console.error('CV delete error:', error);
     res.status(500).json({ message: 'Failed to delete CV' });

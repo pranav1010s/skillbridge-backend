@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import config from '../config';
 
 const AuthContext = createContext();
 
@@ -30,7 +31,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get('http://localhost:5001/api/auth/me');
+          const response = await axios.get(`${config.API_URL}/api/auth/me`);
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -46,17 +47,17 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/login', {
+      const response = await axios.post(`${config.API_URL}/api/auth/login`, {
         email,
         password
       });
 
       const { token: newToken, user: userData } = response.data;
-      
+
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(userData);
-      
+
       return { success: true };
     } catch (error) {
       return {
@@ -68,14 +69,14 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/register', userData);
-      
+      const response = await axios.post(`${config.API_URL}/api/auth/register`, userData);
+
       const { token: newToken, user: newUser } = response.data;
-      
+
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(newUser);
-      
+
       return { success: true };
     } catch (error) {
       return {

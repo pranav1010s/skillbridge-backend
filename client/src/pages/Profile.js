@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo from '../components/Logo';
+import config from '../config';
 import {
   Box,
   Container,
@@ -18,20 +20,28 @@ import {
   Grid,
   Alert,
   CircularProgress,
-  Autocomplete,
-  useTheme,
+  AppBar,
+  Toolbar,
+  Avatar,
+  Menu,
+  MenuItem,
   Divider
 } from '@mui/material';
 import {
   Edit as EditIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  VpnKey as VpnKeyIcon
+  VpnKey as VpnKeyIcon,
+  Person,
+  School,
+  Work,
+  Code,
+  Email,
+  Phone,
+  Dashboard as DashboardIcon
 } from '@mui/icons-material';
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
-  const theme = useTheme();
+  const { user, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,7 +49,8 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [passwordResetEmail, setPasswordResetEmail] = useState('');
-  
+  const [anchorEl, setAnchorEl] = useState(null);
+
   const [editData, setEditData] = useState({
     firstName: '',
     lastName: '',
@@ -58,46 +69,6 @@ const Profile = () => {
     certifications: [],
     languages: []
   });
-
-  const groupSkillsByCategory = (skills) => {
-    if (!skills || skills.length === 0) return {};
-    
-    const categories = {
-      'Accounting & Reporting Support': ['Accounting', 'Data entry', 'Invoicing', 'Record-keeping', 'Financial reporting'],
-      'Microsoft Excel & Analytics Tools': ['Microsoft Excel', 'Excel', 'Pivot Tables', 'VLOOKUP', 'Formulas', 'Tableau', 'Power BI', 'VBA', 'Macros'],
-      'ERP & Systems': ['SAP', 'S/4HANA', 'ERP', 'ECC', 'Snowflake', 'Sage X3', 'TCPCM', 'PLM'],
-      'Automation & Productivity Tools': ['Python', 'AI', 'LLM', 'Automation', 'Process improvement'],
-      'Office Administration': ['Filing', 'Document preparation', 'Administrative support', 'Office management'],
-      'Soft Skills': ['Strategic thinking', 'Communication', 'Teamwork', 'Problem-solving', 'Leadership']
-    };
-
-    const grouped = {};
-    const uncategorized = [];
-
-    skills.forEach(skill => {
-      let categorized = false;
-      for (const [category, categorySkills] of Object.entries(categories)) {
-        if (categorySkills.some(catSkill => 
-          skill.toLowerCase().includes(catSkill.toLowerCase()) ||
-          catSkill.toLowerCase().includes(skill.toLowerCase())
-        )) {
-          if (!grouped[category]) grouped[category] = [];
-          grouped[category].push(skill);
-          categorized = true;
-          break;
-        }
-      }
-      if (!categorized) {
-        uncategorized.push(skill);
-      }
-    });
-
-    if (uncategorized.length > 0) {
-      grouped['Other Skills'] = uncategorized;
-    }
-
-    return grouped;
-  };
 
   useEffect(() => {
     if (user) {
@@ -122,6 +93,14 @@ const Profile = () => {
     }
   }, [user]);
 
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   const handleSave = async () => {
     setLoading(true);
     setError('');
@@ -129,10 +108,10 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put('http://localhost:5001/api/users/profile', editData, {
+      const response = await axios.put(`${config.API_URL}/api/users/profile`, editData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data.success) {
         updateUser(response.data.user);
         setSuccess('Profile updated successfully!');
@@ -151,19 +130,18 @@ const Profile = () => {
     setSuccess('');
 
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/forgot-password', {
+      const response = await axios.post(`${config.API_URL}/api/auth/forgot-password`, {
         email: passwordResetEmail
       });
-      
+
       if (response.data.success) {
         setSuccess(response.data.message);
         setPasswordResetDialogOpen(false);
         setPasswordResetEmail('');
-        
-        // Show additional info if email service isn't configured
+
         if (response.data.resetUrl) {
-          console.log('Reset URL (for development):', response.data.resetUrl);
-          alert(`Password reset link generated!\n\nFor development: ${response.data.resetUrl}\n\nIn production, this would be sent via email.`);
+          console.log('Reset URL:', response.data.resetUrl);
+          alert(`Password reset link generated!\n\nFor development: ${response.data.resetUrl}`);
         }
       }
     } catch (error) {
@@ -175,308 +153,352 @@ const Profile = () => {
 
   if (!user) {
     return (
-      <Paper sx={{ maxWidth: 800, mx: 'auto', p: 4, mt: 3 }}>
-        <Typography>Loading profile...</Typography>
-      </Paper>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
-  const skillsGrouped = groupSkillsByCategory(user.skills || []);
-
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper 
-        elevation={1} 
-        sx={{ 
-          p: 5, 
-          borderRadius: 2,
-          bgcolor: '#fafafa',
-          position: 'relative'
+    <Box sx={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+      pb: 8
+    }}>
+      {/* Premium Glass Header */}
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          background: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
         }}
       >
-        {/* Logo and Action Buttons */}
-        <Box sx={{ position: 'absolute', top: 16, left: 16 }}>
-          <Logo size={40} />
-        </Box>
-        <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
-          <IconButton 
-            onClick={() => setPasswordResetDialogOpen(true)}
-            sx={{ 
-              bgcolor: 'white',
-              boxShadow: 1,
-              '&:hover': { bgcolor: '#f5f5f5' }
+        <Container maxWidth="xl">
+          <Toolbar
+            disableGutters
+            sx={{
+              justifyContent: 'space-between',
+              py: 1.5,
+              px: 2,
+              width: '100%',
+              minHeight: 70
             }}
-            title="Reset Password"
           >
-            <VpnKeyIcon sx={{ color: '#ff9800' }} />
-          </IconButton>
-          <IconButton 
-            onClick={() => setEditDialogOpen(true)}
-            sx={{ 
-              bgcolor: 'white',
-              boxShadow: 1,
-              '&:hover': { bgcolor: '#f5f5f5' }
-            }}
-            title="Edit Profile"
-          >
-            <EditIcon sx={{ color: '#1976d2' }} />
-          </IconButton>
-        </Box>
-
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
-
-        <Grid container spacing={4}>
-          {/* Personal Information */}
-          <Grid item xs={12} md={6}>
-            <Box sx={{ 
-              bgcolor: 'white', 
-              p: 3, 
-              borderRadius: 2, 
-              border: '1px solid #e0e0e0',
-              height: 'fit-content'
-            }}>
-              <Typography variant="h6" sx={{ 
-                fontWeight: 600, 
-                mb: 2, 
-                color: '#333',
-                borderBottom: '1px solid #eee',
-                pb: 1
-              }}>
-                Personal Information
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Logo size={40} />
+              <Typography
+                variant="h5"
+                className="text-gradient"
+                sx={{ fontWeight: 800, letterSpacing: '-0.5px' }}
+              >
+                SkillBridge
               </Typography>
-              <Box sx={{ '& > *': { mb: 1 } }}>
-                <Typography><strong>Name:</strong> {user.firstName} {user.lastName}</Typography>
-                <Typography><strong>Email:</strong> {user.email}</Typography>
-                {user.phone && <Typography><strong>Phone:</strong> {user.phone}</Typography>}
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
+                startIcon={<DashboardIcon />}
+                onClick={() => navigate('/dashboard')}
+                sx={{
+                  display: { xs: 'none', md: 'flex' },
+                  color: 'text.secondary',
+                  '&:hover': { color: 'primary.main', bgcolor: 'rgba(99, 102, 241, 0.08)' }
+                }}
+              >
+                Dashboard
+              </Button>
+
+              <Box sx={{ position: 'relative' }}>
+                <IconButton
+                  onClick={handleMenuClick}
+                  sx={{
+                    width: 45,
+                    height: 45,
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    color: 'white',
+                    boxShadow: '0 4px 14px 0 rgba(99, 102, 241, 0.3)',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 20px 0 rgba(99, 102, 241, 0.4)',
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Person />
+                </IconButton>
+
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  PaperProps={{
+                    sx: {
+                      mt: 1,
+                      borderRadius: 2,
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      minWidth: 180
+                    }
+                  }}
+                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                >
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/dashboard'); }}>
+                    <DashboardIcon sx={{ mr: 2, fontSize: 20, color: '#6366f1' }} />
+                    <Typography variant="body2" fontWeight={500}>Dashboard</Typography>
+                  </MenuItem>
+                  <MenuItem onClick={logout}>
+                    <Typography variant="body2" fontWeight={500} color="error">Logout</Typography>
+                  </MenuItem>
+                </Menu>
               </Box>
             </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
+
+      <Container maxWidth={false} sx={{ mt: 4, px: { xs: 2, md: 4 } }}>
+        {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>{success}</Alert>}
+
+        <Grid container spacing={4} justifyContent="center">
+          {/* Left Column - Profile Summary */}
+          <Grid item xs={12}>
+            <Paper
+              className="glass-panel fade-in-up"
+              sx={{
+                p: 4,
+                borderRadius: 4,
+                textAlign: 'center',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 100,
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)'
+              }} />
+
+              <Avatar sx={{
+                width: 100,
+                height: 100,
+                mx: 'auto',
+                mb: 2,
+                border: '4px solid white',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                fontSize: 40,
+                position: 'relative',
+                zIndex: 1
+              }}>
+                {user.firstName[0]}
+              </Avatar>
+
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                {user.firstName} {user.lastName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {user.email}
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mb: 3 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<EditIcon />}
+                  onClick={() => setEditDialogOpen(true)}
+                  sx={{ borderRadius: '8px' }}
+                >
+                  Edit Profile
+                </Button>
+                <IconButton
+                  onClick={() => setPasswordResetDialogOpen(true)}
+                  sx={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px'
+                  }}
+                  title="Reset Password"
+                >
+                  <VpnKeyIcon fontSize="small" />
+                </IconButton>
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              <Box sx={{ textAlign: 'left' }}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Person fontSize="small" color="primary" /> Personal Details
+                </Typography>
+                {user.phone && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                    <Phone fontSize="small" color="action" />
+                    <Typography variant="body2">{user.phone}</Typography>
+                  </Box>
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Email fontSize="small" color="action" />
+                  <Typography variant="body2">{user.email}</Typography>
+                </Box>
+              </Box>
+            </Paper>
           </Grid>
 
-          {/* Education */}
-          <Grid item xs={12} md={6}>
-            {(user.education || user.university) && (
-              <Box sx={{ 
-                bgcolor: 'white', 
-                p: 3, 
-                borderRadius: 2, 
-                border: '1px solid #e0e0e0',
-                height: 'fit-content'
-              }}>
-                <Typography variant="h6" sx={{ 
-                  fontWeight: 600, 
-                  mb: 2, 
-                  color: '#333',
-                  borderBottom: '1px solid #eee',
-                  pb: 1
-                }}>
+          {/* Right Column - Details */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+              {/* Education */}
+              <Paper
+                className="glass-panel fade-in-up"
+                style={{ animationDelay: '0.1s' }}
+                sx={{ p: 3, borderRadius: 4 }}
+              >
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#6366f1' }}>
+                    <School fontSize="small" />
+                  </Box>
                   Education
                 </Typography>
-                <Box sx={{ '& > *': { mb: 1 } }}>
-                  <Typography><strong>University:</strong> {user.education?.university || user.university}</Typography>
-                  {user.education?.degree && <Typography><strong>Degree:</strong> {user.education.degree}</Typography>}
-                  <Typography><strong>Major:</strong> {user.education?.major || user.major}</Typography>
-                  {user.education?.graduationYear && <Typography><strong>Graduation:</strong> {user.education.graduationYear}</Typography>}
-                  {user.education?.gpa && <Typography><strong>GPA:</strong> {user.education.gpa}</Typography>}
-                </Box>
-              </Box>
-            )}
+
+                {(user.education || user.university) ? (
+                  <Box sx={{ pl: 2, borderLeft: '2px solid #e2e8f0' }}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {user.education?.university || user.university}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {user.education?.degree || user.degree} {(user.education?.major || user.major) && `in ${user.education?.major || user.major}`}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      {user.education?.graduationYear && (
+                        <Chip label={`Class of ${user.education.graduationYear}`} size="small" variant="outlined" />
+                      )}
+                      {(user.education?.gpa || user.gpa) && (
+                        <Chip label={`GPA: ${user.education?.gpa || user.gpa}`} size="small" color="primary" variant="outlined" />
+                      )}
+                    </Box>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    No education details added yet.
+                  </Typography>
+                )}
+              </Paper>
+
+              {/* Skills */}
+              <Paper
+                className="glass-panel fade-in-up"
+                style={{ animationDelay: '0.2s' }}
+                sx={{ p: 3, borderRadius: 4 }}
+              >
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(236, 72, 153, 0.1)', color: '#ec4899' }}>
+                    <Code fontSize="small" />
+                  </Box>
+                  Skills
+                </Typography>
+
+                {user.skills && user.skills.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {user.skills.map((skill, index) => (
+                      <Chip
+                        key={index}
+                        label={skill}
+                        sx={{
+                          bgcolor: 'white',
+                          border: '1px solid #e2e8f0',
+                          fontWeight: 500,
+                          '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' }
+                        }}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    No skills added yet.
+                  </Typography>
+                )}
+              </Paper>
+
+              {/* Experience */}
+              <Paper
+                className="glass-panel fade-in-up"
+                style={{ animationDelay: '0.3s' }}
+                sx={{ p: 3, borderRadius: 4 }}
+              >
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                    <Work fontSize="small" />
+                  </Box>
+                  Experience
+                </Typography>
+
+                {user.experience && user.experience.length > 0 ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {user.experience.map((exp, index) => (
+                      <Box key={index} sx={{ pl: 2, borderLeft: '2px solid #e2e8f0', position: 'relative' }}>
+                        <Box sx={{
+                          position: 'absolute',
+                          left: -5,
+                          top: 0,
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: '#10b981'
+                        }} />
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {exp.position}
+                        </Typography>
+                        <Typography variant="body2" color="primary.main" fontWeight={500} gutterBottom>
+                          {exp.company}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                          {exp.startDate} - {exp.endDate || 'Present'}
+                        </Typography>
+                        {exp.description && (
+                          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                            {exp.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    No experience added yet.
+                  </Typography>
+                )}
+              </Paper>
+
+            </Box>
           </Grid>
         </Grid>
-
-
-        {/* Skills */}
-        {user.skills && user.skills.length > 0 && (
-          <Box sx={{ 
-            bgcolor: 'white', 
-            p: 3, 
-            borderRadius: 2, 
-            border: '1px solid #e0e0e0',
-            mt: 4
-          }}>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 600, 
-              mb: 2, 
-              color: '#333',
-              borderBottom: '1px solid #eee',
-              pb: 1
-            }}>
-              Skills
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {user.skills.map((skill, index) => (
-                <Chip 
-                  key={index} 
-                  label={skill} 
-                  size="small"
-                  sx={{ 
-                    bgcolor: '#f5f5f5',
-                    color: '#333',
-                    border: '1px solid #ddd',
-                    '&:hover': { bgcolor: '#e0e0e0' }
-                  }}
-                />
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {/* Experience */}
-        {user.experience && user.experience.length > 0 && (
-          <Box sx={{ 
-            bgcolor: 'white', 
-            p: 3, 
-            borderRadius: 2, 
-            border: '1px solid #e0e0e0',
-            mt: 4
-          }}>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 600, 
-              mb: 2, 
-              color: '#333',
-              borderBottom: '1px solid #eee',
-              pb: 1
-            }}>
-              Experience
-            </Typography>
-            <Box sx={{ '& > *': { mb: 3 } }}>
-              {user.experience.map((exp, index) => (
-                <Box key={index}>
-                  <Typography sx={{ fontWeight: 600, color: '#333' }}>
-                    {exp.position} at {exp.company}
-                  </Typography>
-                  <Typography sx={{ color: '#666', fontSize: '0.9rem' }}>
-                    {exp.startDate} - {exp.endDate}
-                  </Typography>
-                  {exp.description && (
-                    <Typography sx={{ mt: 0.5, color: '#555', fontSize: '0.95rem' }}>
-                      {exp.description.length > 150 ? `${exp.description.substring(0, 150)}...` : exp.description}
-                    </Typography>
-                  )}
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {/* Projects */}
-        {user.projects && user.projects.length > 0 && (
-          <Box sx={{ 
-            bgcolor: 'white', 
-            p: 3, 
-            borderRadius: 2, 
-            border: '1px solid #e0e0e0',
-            mt: 4
-          }}>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 600, 
-              mb: 2, 
-              color: '#333',
-              borderBottom: '1px solid #eee',
-              pb: 1
-            }}>
-              Projects
-            </Typography>
-            <Box sx={{ '& > *': { mb: 2 } }}>
-              {user.projects.map((project, index) => (
-                <Box key={index}>
-                  <Typography sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>
-                    {project.name}
-                  </Typography>
-                  {project.description && (
-                    <Typography sx={{ color: '#555', fontSize: '0.9rem', mb: 1 }}>
-                      {project.description.length > 100 ? `${project.description.substring(0, 100)}...` : project.description}
-                    </Typography>
-                  )}
-                  {project.technologies && (
-                    <Typography sx={{ color: '#666', fontSize: '0.85rem' }}>
-                      <strong>Technologies:</strong> {project.technologies.join(', ')}
-                    </Typography>
-                  )}
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {/* Certifications */}
-        {user.certifications && user.certifications.length > 0 && (
-          <Box sx={{ 
-            bgcolor: 'white', 
-            p: 3, 
-            borderRadius: 2, 
-            border: '1px solid #e0e0e0',
-            mt: 4
-          }}>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 600, 
-              mb: 2, 
-              color: '#333',
-              borderBottom: '1px solid #eee',
-              pb: 1
-            }}>
-              Certifications
-            </Typography>
-            <Box sx={{ '& > *': { mb: 1.5 } }}>
-              {user.certifications.map((cert, index) => (
-                <Box key={index}>
-                  <Typography sx={{ fontWeight: 600, color: '#333' }}>
-                    {cert.name}
-                  </Typography>
-                  <Typography sx={{ color: '#666', fontSize: '0.9rem' }}>
-                    Issued by: {cert.issuer}
-                    {cert.date && ` • ${cert.date}`}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {/* Languages */}
-        {user.languages && user.languages.length > 0 && (
-          <Box sx={{ 
-            bgcolor: 'white', 
-            p: 3, 
-            borderRadius: 2, 
-            border: '1px solid #e0e0e0',
-            mt: 4
-          }}>
-            <Typography variant="h6" sx={{ 
-              fontWeight: 600, 
-              mb: 2, 
-              color: '#333',
-              borderBottom: '1px solid #eee',
-              pb: 1
-            }}>
-              Languages
-            </Typography>
-            <Box sx={{ '& > *': { mb: 1 } }}>
-              {user.languages.map((lang, index) => (
-                <Typography key={index}>
-                  <strong>{lang.language}:</strong> {lang.proficiency}
-                </Typography>
-              ))}
-            </Box>
-          </Box>
-        )}
+      </Container>
 
       {/* Edit Dialog */}
-      <Dialog 
-        open={editDialogOpen} 
+      <Dialog
+        open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle>Edit Profile</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={3} sx={{ mt: 1 }}>
+        <DialogTitle sx={{ borderBottom: '1px solid #e2e8f0', pb: 2 }}>
+          <Typography variant="h6" fontWeight={700}>Edit Profile</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Grid container spacing={3}>
             <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="First Name"
                 value={editData.firstName}
-                onChange={(e) => setEditData({...editData, firstName: e.target.value})}
+                onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={6}>
@@ -484,7 +506,8 @@ const Profile = () => {
                 fullWidth
                 label="Last Name"
                 value={editData.lastName}
-                onChange={(e) => setEditData({...editData, lastName: e.target.value})}
+                onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12}>
@@ -492,11 +515,13 @@ const Profile = () => {
                 fullWidth
                 label="Phone"
                 value={editData.phone}
-                onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                variant="outlined"
               />
             </Grid>
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Education</Typography>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 1, mb: 1 }}>Education</Typography>
+              <Divider sx={{ mb: 2 }} />
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -504,8 +529,8 @@ const Profile = () => {
                 label="University"
                 value={editData.education.university}
                 onChange={(e) => setEditData({
-                  ...editData, 
-                  education: {...editData.education, university: e.target.value}
+                  ...editData,
+                  education: { ...editData.education, university: e.target.value }
                 })}
               />
             </Grid>
@@ -515,8 +540,8 @@ const Profile = () => {
                 label="Degree"
                 value={editData.education.degree}
                 onChange={(e) => setEditData({
-                  ...editData, 
-                  education: {...editData.education, degree: e.target.value}
+                  ...editData,
+                  education: { ...editData.education, degree: e.target.value }
                 })}
               />
             </Grid>
@@ -526,30 +551,41 @@ const Profile = () => {
                 label="Major"
                 value={editData.education.major}
                 onChange={(e) => setEditData({
-                  ...editData, 
-                  education: {...editData.education, major: e.target.value}
+                  ...editData,
+                  education: { ...editData.education, major: e.target.value }
                 })}
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleSave} 
+        <DialogActions sx={{ p: 3, borderTop: '1px solid #e2e8f0' }}>
+          <Button onClick={() => setEditDialogOpen(false)} sx={{ color: 'text.secondary' }}>Cancel</Button>
+          <Button
+            onClick={handleSave}
             variant="contained"
             disabled={loading}
+            sx={{
+              borderRadius: 2,
+              background: 'var(--primary-gradient)',
+              px: 4
+            }}
           >
-            {loading ? <CircularProgress size={20} /> : 'Save'}
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Password Reset Dialog */}
-      <Dialog open={passwordResetDialogOpen} onClose={() => setPasswordResetDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={passwordResetDialogOpen}
+        onClose={() => setPasswordResetDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         <DialogTitle>Reset Password</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
             Enter your email address and we'll send you a link to reset your password.
           </Typography>
           <TextField
@@ -558,22 +594,21 @@ const Profile = () => {
             type="email"
             value={passwordResetEmail}
             onChange={(e) => setPasswordResetEmail(e.target.value)}
-            sx={{ mt: 1 }}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setPasswordResetDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handlePasswordReset} 
+          <Button
+            onClick={handlePasswordReset}
             variant="contained"
             disabled={passwordResetLoading || !passwordResetEmail}
+            sx={{ borderRadius: 2 }}
           >
             {passwordResetLoading ? <CircularProgress size={20} /> : 'Send Reset Link'}
           </Button>
         </DialogActions>
       </Dialog>
-      </Paper>
-    </Container>
+    </Box>
   );
 };
 

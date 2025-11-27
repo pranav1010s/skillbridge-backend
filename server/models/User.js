@@ -24,7 +24,19 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  phone: {
+    type: String,
+    required: false,
+    trim: true,
+    default: ''
+  },
   university: {
+    type: String,
+    required: false,
+    trim: true,
+    default: ''
+  },
+  degree: {
     type: String,
     required: false,
     trim: true,
@@ -66,14 +78,14 @@ const userSchema = new mongoose.Schema({
     postcode: { type: String, default: '' },
     radius: { type: Number, default: 10 },
     coordinates: {
-      lat: { type: Number, default: 51.5074 }, 
+      lat: { type: Number, default: 51.5074 },
       lng: { type: Number, default: -0.1278 }
     }
   },
   careerPreferences: {
     jobTypes: [{
       type: String,
-      enum: ['Internship', 'Part-time', 'Co-op', 'Project-based']
+      enum: ['Internship', 'Part-time', 'Co-op', 'Project-based', 'Full-time', 'Graduate Jobs', 'Select All']
     }],
     industries: [{
       type: String,
@@ -105,8 +117,8 @@ const userSchema = new mongoose.Schema({
   }],
   languages: [{
     language: { type: String, trim: true },
-    proficiency: { 
-      type: String, 
+    proficiency: {
+      type: String,
       enum: ['Basic', 'Conversational', 'Fluent', 'Native'],
       default: 'Conversational'
     }
@@ -114,6 +126,22 @@ const userSchema = new mongoose.Schema({
   interests: [{
     type: String,
     trim: true
+  }],
+  summary: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  customSections: [{
+    title: { type: String, trim: true, required: true },
+    content: { type: String, trim: true },
+    items: [{ type: String, trim: true }],
+    type: {
+      type: String,
+      enum: ['text', 'list'],
+      default: 'text'
+    },
+    order: { type: Number, default: 0 }
   }],
   profileCompleted: {
     type: Boolean,
@@ -151,9 +179,9 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
@@ -164,19 +192,19 @@ userSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
 // Get full name
-userSchema.virtual('fullName').get(function() {
+userSchema.virtual('fullName').get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
 // Ensure virtual fields are serialized
 userSchema.set('toJSON', {
   virtuals: true,
-  transform: function(doc, ret) {
+  transform: function (doc, ret) {
     delete ret.password;
     return ret;
   }

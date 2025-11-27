@@ -22,7 +22,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Divider
 } from '@mui/material';
 import Logo from '../components/Logo';
 import {
@@ -30,6 +31,7 @@ import {
   LocationOn,
   Person,
   Assignment,
+  Description,
   AccountCircle,
   Delete,
   Email,
@@ -41,6 +43,7 @@ import { useAuth } from '../contexts/AuthContext';
 import CVUpload from '../components/CVUpload';
 import OpportunityFinder from '../components/OpportunityFinder';
 import axios from 'axios';
+import config from '../config';
 
 const Dashboard = () => {
   const { user, updateUser, logout } = useAuth();
@@ -66,7 +69,7 @@ const Dashboard = () => {
 
   const loadSavedJobs = async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/saved-jobs', {
+      const response = await axios.get(`${config.API_URL}/api/saved-jobs`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -82,7 +85,7 @@ const Dashboard = () => {
 
   const handleRemoveJob = async (jobId) => {
     try {
-      await axios.delete(`http://localhost:5001/api/saved-jobs/${jobId}`, {
+      await axios.delete(`${config.API_URL}/api/saved-jobs/${jobId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -105,9 +108,9 @@ const Dashboard = () => {
     setEmailDialog({ open: true, job });
     setGeneratingEmail(true);
     setEmailTemplate('');
-    
+
     try {
-      const response = await axios.post('http://localhost:5001/api/opportunities/generate-email', {
+      const response = await axios.post(`${config.API_URL}/api/opportunities/generate-email`, {
         businessName: job.company,
         businessDescription: job.description,
         potentialRoles: [job.title],
@@ -120,7 +123,7 @@ const Dashboard = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       setEmailTemplate(response.data.emailTemplate);
     } catch (error) {
       console.error('Error generating email:', error);
@@ -150,36 +153,35 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh' }}>
-      {/* Header */}
-      <Box 
-        sx={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 1100
+      {/* Premium Glass Header */}
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          background: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
         }}
       >
-        <Container maxWidth="lg">
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+        <Container maxWidth="xl">
+          <Toolbar
+            disableGutters
+            sx={{
               justifyContent: 'space-between',
-              py: 2,
-              px: 0
+              py: 1.5,
+              px: 2,
+              width: '100%',
+              minHeight: 70
             }}
           >
-            {/* Left: Logo and Brand */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Logo size={36} />
-              <Typography 
-                variant="h5" 
-                component="div" 
-                sx={{ 
-                  fontWeight: 700,
-                  color: 'white',
+            {/* Logo Area */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Logo size={40} />
+              <Typography
+                variant="h5"
+                className="text-gradient"
+                sx={{
+                  fontWeight: 800,
                   letterSpacing: '-0.5px'
                 }}
               >
@@ -187,37 +189,35 @@ const Dashboard = () => {
               </Typography>
             </Box>
 
-            {/* Right: Welcome and Profile */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontSize: '0.95rem',
-                  fontWeight: 500
-                }}
-              >
-                Welcome, {user?.firstName}
-              </Typography>
-              
+            {/* Right Actions */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' }, mr: 1 }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                  {user?.firstName} {user?.lastName}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  {user?.email}
+                </Typography>
+              </Box>
+
               <Box sx={{ position: 'relative' }}>
                 <IconButton
                   onClick={handleMenuClick}
                   sx={{
-                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    width: 45,
+                    height: 45,
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
                     color: 'white',
-                    width: 44,
-                    height: 44,
+                    boxShadow: '0 4px 14px 0 rgba(99, 102, 241, 0.3)',
                     '&:hover': {
-                      bgcolor: 'rgba(255, 255, 255, 0.2)',
-                      transform: 'scale(1.05)'
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 20px 0 rgba(99, 102, 241, 0.4)',
                     },
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <AccountCircle sx={{ fontSize: 24 }} />
+                  <Person />
                 </IconButton>
-                
                 <Menu
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
@@ -234,57 +234,162 @@ const Dashboard = () => {
                   transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                   anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                 >
-                  <MenuItem 
-                    onClick={() => { handleMenuClose(); navigate('/profile'); }}
-                    sx={{ 
-                      py: 1.5, 
-                      px: 2,
-                      '&:hover': { bgcolor: 'rgba(99, 102, 241, 0.08)' }
-                    }}
-                  >
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>
                     <Person sx={{ mr: 2, fontSize: 20, color: '#6366f1' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Profile
-                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>Profile</Typography>
                   </MenuItem>
-                  <MenuItem 
-                    onClick={() => { handleMenuClose(); navigate('/applications'); }}
-                    sx={{ 
-                      py: 1.5, 
-                      px: 2,
-                      '&:hover': { bgcolor: 'rgba(99, 102, 241, 0.08)' }
-                    }}
-                  >
-                    <Assignment sx={{ mr: 2, fontSize: 20, color: '#6366f1' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Applications
-                    </Typography>
-                  </MenuItem>
-                  <MenuItem 
-                    onClick={logout}
-                    sx={{ 
-                      py: 1.5, 
-                      px: 2,
-                      '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.08)' }
-                    }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#ef4444' }}>
-                      Logout
-                    </Typography>
+                  <MenuItem onClick={logout}>
+                    <Typography variant="body2" fontWeight={500} color="error">Logout</Typography>
                   </MenuItem>
                 </Menu>
               </Box>
             </Box>
-          </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
+
+      {/* Hero Section */}
+      <Box sx={{
+        position: 'relative',
+        overflow: 'hidden',
+        py: 8,
+        background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, rgba(255,255,255,0) 100%)'
+      }}>
+        <Container maxWidth="xl">
+          <Grid container spacing={4} alignItems="center" justifyContent="center">
+            <Grid item xs={12} md={7}>
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 800,
+                  mb: 2,
+                  background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+                className="fade-in-up"
+              >
+                Welcome back,<br />
+                <span className="text-gradient">{user?.firstName}</span>
+              </Typography>
+              <Typography
+                variant="h6"
+                color="text.secondary"
+                sx={{ mb: 4, maxWidth: 600, fontWeight: 400 }}
+                className="fade-in-up"
+                style={{ animationDelay: '0.1s' }}
+              >
+                Your AI-powered career assistant is ready. Upload your CV to get started or explore new opportunities tailored just for you.
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 2 }} className="fade-in-up" style={{ animationDelay: '0.2s' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<Description />}
+                  onClick={() => navigate('/ai-cv-editor')}
+                  sx={{
+                    borderRadius: '12px',
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    py: 1.5,
+                    px: 4,
+                    background: 'var(--primary-gradient)',
+                    boxShadow: '0 10px 20px -10px rgba(99, 102, 241, 0.5)',
+                    '&:hover': {
+                      boxShadow: '0 20px 30px -10px rgba(99, 102, 241, 0.6)',
+                      transform: 'translateY(-2px)'
+                    }
+                  }}
+                >
+                  Open AI Editor
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<Person />}
+                  onClick={() => navigate('/profile')}
+                  sx={{
+                    borderRadius: '12px',
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    py: 1.5,
+                    px: 4,
+                    borderColor: '#e2e8f0',
+                    color: '#64748b',
+                    '&:hover': {
+                      borderColor: '#cbd5e1',
+                      bgcolor: 'white',
+                      color: '#1e293b'
+                    }
+                  }}
+                >
+                  View Profile
+                </Button>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+              <Box
+                className="glass-panel fade-in-up"
+                style={{ animationDelay: '0.3s' }}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%)'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <Box sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(99, 102, 241, 0.1)',
+                    color: '#6366f1',
+                    mr: 2
+                  }}>
+                    <Assignment />
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={700}>Quick Stats</Typography>
+                    <Typography variant="caption" color="text.secondary">Your activity overview</Typography>
+                  </Box>
+                </Box>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                      <Typography variant="h4" fontWeight={700} color="primary.main">
+                        {savedJobs.length}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                        Saved Jobs
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                      <Typography variant="h4" fontWeight={700} sx={{ color: '#ec4899' }}>
+                        {user?.profileCompleted ? '100%' : '50%'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                        Profile Status
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-          {/* CV Upload Section */}
-          <CVUpload />
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* CV Upload Section */}
+        <CVUpload />
 
-          {/* Opportunity Finder Section */}
-          <OpportunityFinder />
+        {/* Opportunity Finder Section */}
+        <OpportunityFinder />
 
 
         {/* Saved Jobs Section */}
@@ -295,7 +400,7 @@ const Dashboard = () => {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             Jobs you've saved from the AI Opportunity Finder
           </Typography>
-          
+
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
@@ -305,135 +410,173 @@ const Dashboard = () => {
 
         {/* Saved Jobs Grid */}
         {savedJobs.length === 0 ? (
-          <Card sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="h6" gutterBottom>
+          <Card
+            className="glass-panel fade-in-up"
+            sx={{
+              p: 6,
+              textAlign: 'center',
+              borderRadius: 4,
+              border: '1px dashed rgba(99, 102, 241, 0.3)',
+              background: 'rgba(255, 255, 255, 0.5)'
+            }}
+          >
+            <Box sx={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              bgcolor: 'rgba(99, 102, 241, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 3
+            }}>
+              <Work sx={{ fontSize: 40, color: '#6366f1' }} />
+            </Box>
+            <Typography variant="h5" gutterBottom fontWeight={700}>
               No saved jobs yet
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Use the AI Opportunity Finder above to discover and save jobs that match your profile
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
+              Use the AI Opportunity Finder above to discover and save jobs that match your profile perfectly.
             </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<Assignment />}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              Start Searching
+            </Button>
           </Card>
         ) : (
           <Grid container spacing={3}>
-            {savedJobs.map((job) => (
+            {savedJobs.map((job, index) => (
               <Grid item xs={12} md={6} lg={4} key={job._id}>
                 <Card
+                  className="hover-lift fade-in-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                   sx={{
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    '&:hover': {
-                      boxShadow: theme.shadows[8],
-                      transform: 'translateY(-2px)',
-                      transition: 'all 0.3s ease'
-                    }
+                    borderRadius: 4,
+                    border: '1px solid rgba(0,0,0,0.05)',
+                    background: 'white',
+                    overflow: 'visible'
                   }}
                 >
-                  <CardContent sx={{ flexGrow: 1 }}>
+                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-                        {job.title}
-                      </Typography>
+                      <Box>
+                        <Chip
+                          label={job.jobType}
+                          size="small"
+                          sx={{
+                            mb: 1,
+                            bgcolor: 'rgba(99, 102, 241, 0.1)',
+                            color: '#6366f1',
+                            fontWeight: 600,
+                            borderRadius: '8px'
+                          }}
+                        />
+                        <Typography variant="h6" component="h2" sx={{ fontWeight: 700, lineHeight: 1.3, mb: 0.5 }}>
+                          {job.title}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Business sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                            {job.company}
+                          </Typography>
+                        </Box>
+                      </Box>
                       <IconButton
                         onClick={() => handleRemoveJob(job._id)}
                         size="small"
-                        sx={{ color: 'text.secondary' }}
+                        sx={{
+                          color: 'text.secondary',
+                          '&:hover': { color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.1)' }
+                        }}
                       >
-                        <Delete />
+                        <Delete fontSize="small" />
                       </IconButton>
                     </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Business sx={{ mr: 1, color: 'text.secondary', fontSize: 16 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {job.company}
-                      </Typography>
+                    <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{ p: 0.8, borderRadius: 1.5, bgcolor: '#f1f5f9', color: '#64748b' }}>
+                          <LocationOn sx={{ fontSize: 16 }} />
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {job.location}
+                        </Typography>
+                      </Box>
+
+                      {job.industry && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Box sx={{ p: 0.8, borderRadius: 1.5, bgcolor: '#f1f5f9', color: '#64748b' }}>
+                            <Work sx={{ fontSize: 16 }} />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {job.industry}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {job.contactEmail && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Box sx={{ p: 0.8, borderRadius: 1.5, bgcolor: '#f1f5f9', color: '#64748b' }}>
+                            <Email sx={{ fontSize: 16 }} />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+                            {job.contactEmail}
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <LocationOn sx={{ mr: 1, color: 'text.secondary', fontSize: 16 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {job.location}
-                      </Typography>
-                    </Box>
-
-                    {job.industry && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Work sx={{ mr: 1, color: 'text.secondary', fontSize: 16 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {job.industry}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {job.contactEmail && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Email sx={{ mr: 1, color: 'text.secondary', fontSize: 16 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {job.contactEmail}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {job.phone && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Phone sx={{ mr: 1, color: 'text.secondary', fontSize: 16 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {job.phone}
-                        </Typography>
-                      </Box>
-                    )}
-                    
-                    <Typography variant="body2" sx={{ mb: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {job.description}
-                    </Typography>
 
                     {job.pitch && (
-                      <Box sx={{ mb: 2, p: 1.5, backgroundColor: 'primary.light', borderRadius: 1 }}>
-                        <Typography variant="caption" color="primary.dark" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                          Why You're a Great Fit:
+                      <Box sx={{
+                        mb: 3,
+                        p: 2,
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)',
+                        borderRadius: 3,
+                        border: '1px solid rgba(99, 102, 241, 0.1)'
+                      }}>
+                        <Typography variant="caption" sx={{ color: '#6366f1', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                          <Assignment sx={{ fontSize: 14 }} /> WHY YOU'RE A MATCH
                         </Typography>
-                        <Typography variant="body2" color="primary.dark" sx={{ fontSize: '0.85rem' }}>
+                        <Typography variant="body2" color="text.primary" sx={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
                           {job.pitch}
                         </Typography>
                       </Box>
                     )}
-                    
-                    {job.requirements && job.requirements.length > 0 && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                          Requirements:
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {job.requirements.slice(0, 3).map((req, index) => (
-                            <Chip key={index} label={req} size="small" variant="outlined" />
-                          ))}
-                          {job.requirements.length > 3 && (
-                            <Chip label={`+${job.requirements.length - 3} more`} size="small" variant="outlined" />
-                          )}
-                        </Box>
-                      </Box>
-                    )}
-                    
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto', mb: 2 }}>
-                      <Chip label={job.jobType} size="small" color="primary" variant="outlined" />
-                      <Typography variant="caption" color="text.secondary">
-                        Saved {new Date(job.savedAt).toLocaleDateString()}
+
+                    <Box sx={{ mt: 'auto' }}>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        startIcon={<Email />}
+                        onClick={() => handleGenerateEmail(job)}
+                        sx={{
+                          borderRadius: '10px',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          py: 1.2,
+                          background: '#1e293b',
+                          boxShadow: 'none',
+                          '&:hover': {
+                            background: '#334155',
+                            boxShadow: '0 4px 12px rgba(30, 41, 59, 0.2)'
+                          }
+                        }}
+                      >
+                        Generate Cold Email
+                      </Button>
+                      <Typography variant="caption" display="block" textAlign="center" color="text.secondary" sx={{ mt: 1.5 }}>
+                        Saved on {new Date(job.savedAt).toLocaleDateString()}
                       </Typography>
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Email />}
-                        onClick={() => handleGenerateEmail(job)}
-                        sx={{ flex: 1 }}
-                      >
-                        Generate Email
-                      </Button>
-                    </Box>
-                    
                   </CardContent>
                 </Card>
               </Grid>

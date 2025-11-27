@@ -27,6 +27,7 @@ import {
   Error
 } from '@mui/icons-material';
 import axios from 'axios';
+import config from '../config';
 
 const CVUpload = () => {
   const { user, updateUser } = useAuth();
@@ -63,7 +64,7 @@ const CVUpload = () => {
       const formData = new FormData();
       formData.append('cv', file);
 
-      const response = await axios.post('http://localhost:5001/api/cv/upload', formData, {
+      const response = await axios.post(`${config.API_URL}/api/cv/upload`, formData, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'multipart/form-data'
@@ -78,7 +79,7 @@ const CVUpload = () => {
         setSuccess('CV uploaded and parsed successfully!');
         setParsedData(response.data.parsedData);
         setShowParsedData(true);
-        
+
         // Update user profile in auth context
         if (response.data.user) {
           updateUser(response.data.user);
@@ -95,7 +96,7 @@ const CVUpload = () => {
 
   const handleDeleteCV = async () => {
     try {
-      const response = await axios.delete('http://localhost:5001/api/cv/delete', {
+      const response = await axios.delete(`${config.API_URL}/api/cv/delete`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -113,13 +114,13 @@ const CVUpload = () => {
 
   const handleDownloadCV = () => {
     if (user?.resumeUrl) {
-      window.open(`http://localhost:5001/api/cv/download/${user.resumeUrl}`, '_blank');
+      window.open(`${config.API_URL}/api/cv/download/${user.resumeUrl}`, '_blank');
     }
   };
 
   const renderParsedDataDialog = () => (
-    <Dialog 
-      open={showParsedData} 
+    <Dialog
+      open={showParsedData}
       onClose={() => setShowParsedData(false)}
       maxWidth="md"
       fullWidth
@@ -247,10 +248,10 @@ const CVUpload = () => {
                     <Typography variant="h6" gutterBottom>Certifications</Typography>
                     <Box display="flex" flexWrap="wrap" gap={1}>
                       {parsedData.certifications.map((cert, index) => (
-                        <Chip 
-                          key={index} 
-                          label={typeof cert === 'string' ? cert : cert.name} 
-                          size="small" 
+                        <Chip
+                          key={index}
+                          label={typeof cert === 'string' ? cert : cert.name}
+                          size="small"
                           color="primary"
                           variant="outlined"
                         />
@@ -268,10 +269,10 @@ const CVUpload = () => {
                     <Typography variant="h6" gutterBottom>Languages</Typography>
                     <Box display="flex" flexWrap="wrap" gap={1}>
                       {parsedData.languages.map((lang, index) => (
-                        <Chip 
-                          key={index} 
-                          label={lang} 
-                          size="small" 
+                        <Chip
+                          key={index}
+                          label={lang}
+                          size="small"
                           color="secondary"
                           variant="outlined"
                         />
@@ -312,21 +313,21 @@ const CVUpload = () => {
 
       {user?.resumeUrl ? (
         <Box>
-          <Alert 
-            severity="success" 
+          <Alert
+            severity="success"
             sx={{ mb: 2 }}
             icon={<CheckCircle />}
             action={
               <Box>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={handleDownloadCV}
                   sx={{ mr: 1 }}
                 >
                   <Download />
                 </IconButton>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={handleDeleteCV}
                   color="error"
                 >
@@ -370,9 +371,9 @@ const CVUpload = () => {
               <Typography variant="body2" sx={{ mb: 1 }}>
                 {uploadProgress < 100 ? 'Uploading...' : 'Processing with AI...'}
               </Typography>
-              <LinearProgress 
-                variant={uploadProgress < 100 ? "determinate" : "indeterminate"} 
-                value={uploadProgress} 
+              <LinearProgress
+                variant={uploadProgress < 100 ? "determinate" : "indeterminate"}
+                value={uploadProgress}
               />
             </Box>
           )}

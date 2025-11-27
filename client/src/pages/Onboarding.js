@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import config from '../config';
 import {
   Box,
   Container,
@@ -53,10 +54,10 @@ const Onboarding = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const [universities, setUniversities] = useState([]);
   const [loadingUniversities, setLoadingUniversities] = useState(true);
-  
+
   const [formData, setFormData] = useState({
     university: '',
     major: '',
@@ -83,7 +84,7 @@ const Onboarding = () => {
   useEffect(() => {
     const loadUniversities = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/universities');
+        const response = await axios.get(`${config.API_URL}/api/universities`);
         if (response.data.success) {
           setUniversities(response.data.universities);
         }
@@ -118,21 +119,21 @@ const Onboarding = () => {
       console.log('Starting profile submission with data:', formData);
       console.log('Current user:', user);
       console.log('Current token:', token);
-      
+
       // Authentication is handled by axios defaults in AuthContext
-      
+
       // Validate required fields
       if (!formData.university || !formData.major || !formData.year || !formData.expectedGraduation) {
         throw new Error('Please fill in all required academic information');
       }
-      
+
       if (!formData.city || !formData.postcode) {
         throw new Error('Please fill in both city and postcode');
       }
 
       // First geocode the UK postcode
       console.log('Geocoding postcode:', formData.postcode, 'city:', formData.city);
-      const geocodeResponse = await axios.post('http://localhost:5001/api/users/geocode', {
+      const geocodeResponse = await axios.post(`${config.API_URL}/api/users/geocode`, {
         postcode: formData.postcode,
         city: formData.city
       });
@@ -163,14 +164,14 @@ const Onboarding = () => {
       };
 
       console.log('Submitting profile data:', profileData);
-      const response = await axios.put('http://localhost:5001/api/users/profile', profileData, {
+      const response = await axios.put(`${config.API_URL}/api/users/profile`, profileData, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
       });
       console.log('Profile update response:', response.data);
-      
+
       if (response.data.success) {
         updateUser(response.data.user);
         navigate('/dashboard');
@@ -200,10 +201,10 @@ const Onboarding = () => {
                 setFormData({ ...formData, university: newValue || '' });
               }}
               renderInput={(params) => (
-                <TextField 
-                  {...params} 
-                  label="University" 
-                  required 
+                <TextField
+                  {...params}
+                  label="University"
+                  required
                   sx={{ mb: 3 }}
                   helperText={loadingUniversities ? "Loading UK universities..." : "Search from 150+ UK universities"}
                 />
@@ -316,7 +317,7 @@ const Onboarding = () => {
               required
               sx={{ mb: 3 }}
               helperText="Enter your UK postcode (e.g., SW1A 1AA, M1 1AA)"
-              inputProps={{ 
+              inputProps={{
                 pattern: "^[A-Z]{1,2}[0-9R][0-9A-Z]? [0-9][A-Z]{2}$",
                 placeholder: "SW1A 1AA"
               }}
@@ -382,7 +383,7 @@ const Onboarding = () => {
           <Typography variant="h4" component="h1" textAlign="center" gutterBottom sx={{ fontWeight: 700, color: theme.palette.primary.main, mb: 4 }}>
             Complete Your Profile
           </Typography>
-          
+
           <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
             {steps.map((label) => (
               <Step key={label}>

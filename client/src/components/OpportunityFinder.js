@@ -38,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import config from '../config';
 
 const OpportunityFinder = () => {
   const { user } = useAuth();
@@ -57,9 +58,9 @@ const OpportunityFinder = () => {
   const [selectedIndustries, setSelectedIndustries] = useState([]);
 
   const jobTypeOptions = ['Internship', 'Part-time', 'Co-op', 'Project-based', 'Volunteer'];
-  
+
   const industryOptions = [
-    'Technology', 'Healthcare', 'Finance', 'Education', 'Manufacturing', 
+    'Technology', 'Healthcare', 'Finance', 'Education', 'Manufacturing',
     'Retail', 'Construction', 'Transportation', 'Hospitality', 'Media',
     'Real Estate', 'Legal', 'Consulting', 'Non-profit', 'Government',
     'Energy', 'Agriculture', 'Telecommunications', 'Automotive', 'Aerospace'
@@ -83,7 +84,7 @@ const OpportunityFinder = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:5001/api/opportunities/find',
+        `${config.API_URL}/api/opportunities/find`,
         {
           location: location.trim(),
           radius,
@@ -120,7 +121,7 @@ const OpportunityFinder = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:5001/api/opportunities/generate-email',
+        `${config.API_URL}/api/opportunities/generate-email`,
         {
           businessName: business.company || business.name,
           businessDescription: business.description,
@@ -172,7 +173,7 @@ const OpportunityFinder = () => {
       };
 
       const response = await axios.post(
-        'http://localhost:5001/api/saved-jobs',
+        `${config.API_URL}/api/saved-jobs`,
         jobData,
         {
           headers: {
@@ -193,7 +194,7 @@ const OpportunityFinder = () => {
   };
 
   const isJobSaved = (business) => {
-    return savedJobs.some(job => 
+    return savedJobs.some(job =>
       job.company === (business.company || business.name) && job.title === (business.potentialRoles?.[0] || 'Opportunity')
     );
   };
@@ -209,8 +210,8 @@ const OpportunityFinder = () => {
 
   return (
     <Box>
-      <Card 
-        sx={{ 
+      <Card
+        sx={{
           mb: 6,
           borderRadius: 3,
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -220,10 +221,10 @@ const OpportunityFinder = () => {
         <CardContent sx={{ p: 4 }}>
           {/* Header Section */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography 
-              variant="h4" 
-              component="h2" 
-              sx={{ 
+            <Typography
+              variant="h4"
+              component="h2"
+              sx={{
                 fontWeight: 700,
                 color: '#1e293b',
                 mb: 2,
@@ -232,10 +233,10 @@ const OpportunityFinder = () => {
             >
               AI Opportunity Finder
             </Typography>
-            <Typography 
-              variant="h6" 
-              color="text.secondary" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{
                 maxWidth: '600px',
                 mx: 'auto',
                 lineHeight: 1.6,
@@ -258,7 +259,7 @@ const OpportunityFinder = () => {
                 placeholder="e.g., Entry-level software development role, Marketing internship with growth opportunities..."
                 multiline
                 rows={2}
-                sx={{ 
+                sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2
                   }
@@ -319,9 +320,9 @@ const OpportunityFinder = () => {
 
               <Box sx={{ flex: '1 1 160px', minWidth: '140px' }}>
                 <FormControl fullWidth>
-                  <InputLabel 
+                  <InputLabel
                     shrink={jobTypes.length > 0}
-                    sx={{ 
+                    sx={{
                       fontSize: '0.875rem',
                       '&.MuiInputLabel-shrink': {
                         transform: 'translate(14px, -9px) scale(0.75)'
@@ -370,9 +371,9 @@ const OpportunityFinder = () => {
 
               <Box sx={{ flex: '1 1 160px', minWidth: '140px' }}>
                 <FormControl fullWidth>
-                  <InputLabel 
+                  <InputLabel
                     shrink={selectedIndustries.length > 0}
-                    sx={{ 
+                    sx={{
                       fontSize: '0.875rem',
                       '&.MuiInputLabel-shrink': {
                         transform: 'translate(14px, -9px) scale(0.75)'
@@ -427,7 +428,7 @@ const OpportunityFinder = () => {
                 onClick={handleSearch}
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={20} /> : <SearchIcon />}
-                sx={{ 
+                sx={{
                   minWidth: 200,
                   py: 1.5,
                   px: 4,
@@ -449,17 +450,17 @@ const OpportunityFinder = () => {
               </Button>
             </Box>
           </Box>
-          
+
           {/* Alerts */}
           {success && (
-            <Alert 
-              severity="success" 
-              sx={{ 
-                mt: 4, 
+            <Alert
+              severity="success"
+              sx={{
+                mt: 4,
                 borderRadius: 2,
                 maxWidth: '800px',
                 mx: 'auto'
-              }} 
+              }}
               onClose={() => setSuccess('')}
             >
               {success}
@@ -467,14 +468,14 @@ const OpportunityFinder = () => {
           )}
 
           {error && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mt: 4, 
+            <Alert
+              severity="error"
+              sx={{
+                mt: 4,
                 borderRadius: 2,
                 maxWidth: '800px',
                 mx: 'auto'
-              }} 
+              }}
               onClose={() => setError('')}
             >
               {error}
@@ -523,21 +524,21 @@ const OpportunityFinder = () => {
                         <strong>Contact Email:</strong> {business.contactEmail}
                       </Typography>
                     )}
-                    
+
                     {business.phone && (
                       <Typography variant="body1" sx={{ mb: 2 }}>
                         <strong>Phone:</strong> {business.phone}
                       </Typography>
                     )}
-                    
+
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       <strong>Description:</strong> {business.description}
                     </Typography>
-                    
+
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       <strong>Why it's suitable:</strong> {business.whySuitable}
                     </Typography>
-                    
+
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       <strong>Potential roles:</strong>
                     </Typography>
@@ -546,7 +547,7 @@ const OpportunityFinder = () => {
                         <Chip key={roleIndex} label={role} variant="outlined" size="small" />
                       ))}
                     </Box>
-                    
+
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       <strong>Contact suggestion:</strong> {business.contactSuggestion}
                     </Typography>
@@ -562,7 +563,7 @@ const OpportunityFinder = () => {
                     >
                       Generate Cold Email
                     </Button>
-                    
+
                     <Button
                       fullWidth
                       variant={isJobSaved(business) ? "contained" : "outlined"}
@@ -582,8 +583,8 @@ const OpportunityFinder = () => {
       )}
 
       {/* Email Template Dialog */}
-      <Dialog 
-        open={emailDialog} 
+      <Dialog
+        open={emailDialog}
         onClose={() => setEmailDialog(false)}
         maxWidth="md"
         fullWidth
@@ -591,7 +592,7 @@ const OpportunityFinder = () => {
         <DialogTitle>
           Cold Email Template for {selectedBusiness?.company || selectedBusiness?.name}
         </DialogTitle>
-        
+
         <DialogContent>
           {emailLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -609,7 +610,7 @@ const OpportunityFinder = () => {
                   </IconButton>
                 </Tooltip>
               </Box>
-              
+
               <TextField
                 fullWidth
                 multiline
@@ -617,8 +618,8 @@ const OpportunityFinder = () => {
                 value={emailTemplate}
                 onChange={(e) => setEmailTemplate(e.target.value)}
                 variant="outlined"
-                sx={{ 
-                  '& .MuiInputBase-input': { 
+                sx={{
+                  '& .MuiInputBase-input': {
                     fontFamily: 'monospace',
                     fontSize: '0.9rem'
                   }
@@ -627,13 +628,13 @@ const OpportunityFinder = () => {
             </Box>
           )}
         </DialogContent>
-        
+
         <DialogActions>
           <Button onClick={() => setEmailDialog(false)}>
             Close
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={() => copyToClipboard(emailTemplate)}
             disabled={emailLoading}
           >

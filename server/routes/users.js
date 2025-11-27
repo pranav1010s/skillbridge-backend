@@ -14,13 +14,16 @@ router.put('/profile', auth, async (req, res) => {
       firstName,
       lastName,
       university,
+      degree,
       major,
       year,
       expectedGraduation,
+      education,
       skills,
       gpa,
       locationPreference,
-      careerPreferences
+      careerPreferences,
+      phone
     } = req.body;
 
     const user = await User.findById(req.user.id);
@@ -31,7 +34,30 @@ router.put('/profile', auth, async (req, res) => {
     // Update fields with validation
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
+    if (phone) user.phone = phone;
+
+    // Handle nested education object if provided (from Profile.js)
+    if (education) {
+      if (education.university) user.university = education.university;
+      if (education.degree) user.degree = education.degree;
+      if (education.major) user.major = education.major;
+      if (education.graduationYear) {
+        const gradDate = new Date(education.graduationYear);
+        if (!isNaN(gradDate.getTime())) {
+          user.expectedGraduation = gradDate;
+        }
+      }
+      if (education.gpa !== undefined && education.gpa !== null && education.gpa !== '') {
+        const gpaNum = parseFloat(education.gpa);
+        if (!isNaN(gpaNum) && gpaNum >= 0 && gpaNum <= 4) {
+          user.gpa = gpaNum;
+        }
+      }
+    }
+
+    // Also handle flat fields (for backwards compatibility)
     if (university) user.university = university;
+    if (degree) user.degree = degree;
     if (major) user.major = major;
     if (year) user.year = year;
     if (expectedGraduation) {
@@ -76,14 +102,14 @@ router.put('/profile', auth, async (req, res) => {
       locationPreference: user.locationPreference,
       postcode: user.locationPreference ? user.locationPreference.postcode : null
     });
-    
+
     const hasRequiredFields = requiredFields.every(field => user[field]);
     const hasSkills = user.skills && user.skills.length > 0;
     const hasPostcode = user.locationPreference && user.locationPreference.postcode;
-    
+
     const isCompleted = hasRequiredFields && hasSkills && hasPostcode;
     console.log('Profile completion result:', { hasRequiredFields, hasSkills, hasPostcode, isCompleted });
-    
+
     user.profileCompleted = Boolean(isCompleted);
 
     await user.save();
@@ -100,9 +126,9 @@ router.put('/profile', auth, async (req, res) => {
       stack: error.stack,
       requestBody: req.body
     });
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Server error during profile update',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -129,7 +155,7 @@ router.get('/profile', auth, async (req, res) => {
 router.post('/geocode', async (req, res) => {
   try {
     const { postcode, city } = req.body;
-    
+
     if (!postcode) {
       return res.status(400).json({ message: 'Postcode is required' });
     }
@@ -140,7 +166,7 @@ router.post('/geocode', async (req, res) => {
       try {
         // Use both city and postcode for better accuracy
         const address = city ? `${postcode}, ${city}, UK` : `${postcode}, UK`;
-        
+
         const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
           params: {
             address: address,
