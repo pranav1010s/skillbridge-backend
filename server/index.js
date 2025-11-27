@@ -33,6 +33,11 @@ app.use('/api/cv', require('./routes/cv'));
 app.use('/api/opportunities', require('./routes/opportunities'));
 app.use('/api/saved-jobs', savedJobsRoutes);
 
+// <-- root route api check
+app.get('/', (req, res) => {
+  res.send('Welcome to SkillBridge API!');
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'SkillBridge API is running' });
@@ -41,7 +46,7 @@ app.get('/api/health', (req, res) => {
 // Global error handler
 app.use((error, req, res, next) => {
   console.error('Global error handler:', error);
-  res.status(500).json({ 
+  res.status(500).json({
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
