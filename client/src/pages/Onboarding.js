@@ -114,6 +114,13 @@ const Onboarding = () => {
     loadUniversities();
   }, []);
 
+  // Reset skills input value when moving to skills step
+  useEffect(() => {
+    if (activeStep === 1) {
+      setSkillsInputValue('');
+    }
+  }, [activeStep]);
+
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1);
   };
