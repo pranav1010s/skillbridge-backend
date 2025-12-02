@@ -36,7 +36,11 @@ import {
   Code,
   Email,
   Phone,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  DeleteForever,
+  Warning,
+  Visibility,
+  VisibilityOff
 } from '@mui/icons-material';
 
 const Profile = () => {
@@ -44,11 +48,17 @@ const Profile = () => {
   const navigate = useNavigate();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
+  const [deleteWarningOpen, setDeleteWarningOpen] = useState(false);
+  const [deleteAuthOpen, setDeleteAuthOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [passwordResetEmail, setPasswordResetEmail] = useState('');
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const [editData, setEditData] = useState({
@@ -148,6 +158,31 @@ const Profile = () => {
       setError(error.response?.data?.message || 'Error sending password reset email');
     } finally {
       setPasswordResetLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.delete(`${config.API_URL}/api/auth/account`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { email: deleteEmail, password: deletePassword }
+      });
+
+      if (response.data.success) {
+        // Clear all local data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Redirect to landing page
+        navigate('/');
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || 'Error deleting account');
+      setDeleteLoading(false);
     }
   };
 
@@ -307,7 +342,7 @@ const Profile = () => {
                 {user.email}
               </Typography>
 
-              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mb: 3 }}>
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mb: 3, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
                   startIcon={<EditIcon />}
@@ -327,6 +362,25 @@ const Profile = () => {
                   <VpnKeyIcon fontSize="small" />
                 </IconButton>
               </Box>
+
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteForever />}
+                onClick={() => setDeleteWarningOpen(true)}
+                fullWidth
+                sx={{
+                  borderRadius: '8px',
+                  borderColor: '#ef4444',
+                  color: '#ef4444',
+                  '&:hover': {
+                    borderColor: '#dc2626',
+                    bgcolor: 'rgba(239, 68, 68, 0.04)'
+                  }
+                }}
+              >
+                Delete Account
+              </Button>
 
               <Divider sx={{ my: 3 }} />
 
@@ -605,6 +659,123 @@ const Profile = () => {
             sx={{ borderRadius: 2 }}
           >
             {passwordResetLoading ? <CircularProgress size={20} /> : 'Send Reset Link'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Account Warning Dialog */}
+      <Dialog
+        open={deleteWarningOpen}
+        onClose={() => setDeleteWarningOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#ef4444' }}>
+          <Warning />
+          Warning: Permanent Account Deletion
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            This action cannot be undone!
+          </Alert>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Deleting your account will permanently remove:
+          </Typography>
+          <Box component="ul" sx={{ pl: 2, mb: 2, color: 'text.secondary' }}>
+            <Typography component="li" variant="body2" sx={{ mb: 0.5 }}>Your profile and personal information</Typography>
+            <Typography component="li" variant="body2" sx={{ mb: 0.5 }}>All saved jobs and applications</Typography>
+            <Typography component="li" variant="body2" sx={{ mb: 0.5 }}>Your match history</Typography>
+            <Typography component="li" variant="body2" sx={{ mb: 0.5 }}>All account data and preferences</Typography>
+          </Box>
+          <Typography variant="body2" fontWeight={600}>
+            Are you absolutely sure you want to delete your account?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button onClick={() => setDeleteWarningOpen(false)} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              setDeleteWarningOpen(false);
+              setDeleteAuthOpen(true);
+            }}
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: 2 }}
+          >
+            Yes, Delete My Account
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Account Authentication Dialog */}
+      <Dialog
+        open={deleteAuthOpen}
+        onClose={() => {
+          setDeleteAuthOpen(false);
+          setDeleteEmail('');
+          setDeletePassword('');
+          setShowDeletePassword(false);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle>Confirm Your Identity</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+            To confirm account deletion, please enter your email and password.
+          </Typography>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          <TextField
+            fullWidth
+            label="Email Address"
+            type="email"
+            value={deleteEmail}
+            onChange={(e) => setDeleteEmail(e.target.value)}
+            sx={{ mb: 2 }}
+            autoComplete="email"
+          />
+          <TextField
+            fullWidth
+            label="Password"
+            type={showDeletePassword ? 'text' : 'password'}
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            autoComplete="current-password"
+            InputProps={{
+              endAdornment: (
+                <IconButton
+                  onClick={() => setShowDeletePassword(!showDeletePassword)}
+                  edge="end"
+                >
+                  {showDeletePassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              )
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button
+            onClick={() => {
+              setDeleteAuthOpen(false);
+              setDeleteEmail('');
+              setDeletePassword('');
+              setShowDeletePassword(false);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteAccount}
+            variant="contained"
+            color="error"
+            disabled={deleteLoading || !deleteEmail || !deletePassword}
+            sx={{ borderRadius: 2 }}
+          >
+            {deleteLoading ? <CircularProgress size={20} color="inherit" /> : 'Delete Account'}
           </Button>
         </DialogActions>
       </Dialog>

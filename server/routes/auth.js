@@ -244,4 +244,47 @@ router.post('/reset-password/:token', async (req, res) => {
   }
 });
 
+// @route   DELETE /api/auth/account
+// @desc    Delete user account (requires email and password verification)
+// @access  Private
+router.delete('/account', auth, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    // Get the authenticated user
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify email matches
+    if (user.email !== email) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Delete user account and all associated data
+    await User.findByIdAndDelete(user._id);
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ message: 'Error deleting account' });
+  }
+});
+
 module.exports = router;
