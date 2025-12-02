@@ -62,6 +62,7 @@ const Onboarding = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [skillsInputValue, setSkillsInputValue] = useState('');
 
   const [universities, setUniversities] = useState([]);
   const [loadingUniversities, setLoadingUniversities] = useState(true);
@@ -351,6 +352,10 @@ const Onboarding = () => {
               value={formData.skills}
               onChange={(event, newValue) => {
                 setFormData({ ...formData, skills: newValue });
+              }}
+              inputValue={skillsInputValue}
+              onInputChange={(event, newInputValue) => {
+                setSkillsInputValue(newInputValue);
               }}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
