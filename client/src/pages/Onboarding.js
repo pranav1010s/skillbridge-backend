@@ -37,9 +37,86 @@ import Logo from '../components/Logo';
 const steps = ['Academic Info', 'Skills & Experience', 'Location & Preferences'];
 
 const majors = [
-  'Computer Science', 'Engineering', 'Business Administration', 'Marketing',
-  'Data Science', 'Mechanical Engineering', 'Electrical Engineering',
-  'Supply Chain Management', 'Finance', 'Psychology', 'Biology', 'Chemistry'
+  // Engineering
+  'Civil Engineering',
+  'Mechanical Engineering',
+  'Electrical Engineering',
+  'Chemical Engineering',
+  'Aerospace Engineering',
+  'Biomedical Engineering',
+  'Environmental Engineering',
+  'Industrial Engineering',
+  'Software Engineering',
+  'Computer Engineering',
+  'Structural Engineering',
+  'Petroleum Engineering',
+
+  // Computer Science & IT
+  'Computer Science',
+  'Information Technology',
+  'Information Systems',
+  'Data Science',
+  'Cybersecurity',
+  'Artificial Intelligence',
+
+  // Business & Management
+  'Business Administration',
+  'Business Management',
+  'Accounting',
+  'Finance',
+  'Economics',
+  'Marketing',
+  'Human Resource Management',
+  'International Business',
+  'Entrepreneurship',
+  'Supply Chain Management',
+
+  // Sciences
+  'Biology',
+  'Chemistry',
+  'Physics',
+  'Mathematics',
+  'Statistics',
+  'Biochemistry',
+  'Biotechnology',
+  'Environmental Science',
+  'Zoology',
+  'Microbiology',
+
+  // Social Sciences & Humanities
+  'Psychology',
+  'Sociology',
+  'Political Science',
+  'History',
+  'Philosophy',
+  'English Literature',
+  'Communications',
+  'Journalism',
+  'Education',
+
+  // Healthcare
+  'Nursing',
+  'Medicine',
+  'Pharmacy',
+  'Public Health',
+  'Health Sciences',
+
+  // Arts & Design
+  'Graphic Design',
+  'Architecture',
+  'Fine Arts',
+  'Animation',
+  'Interior Design',
+
+  // Law & Criminal Justice
+  'Law',
+  'Criminal Justice',
+
+  // Other
+  'Agriculture',
+  'Hospitality Management',
+  'Sports Science',
+  'Film Studies'
 ];
 
 const skillOptions = [
