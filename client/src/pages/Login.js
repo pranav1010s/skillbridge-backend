@@ -26,9 +26,11 @@ import {
 import axios from 'axios';
 import Logo from '../components/Logo';
 import config from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -54,12 +56,14 @@ const Login = () => {
         setError('');
 
         try {
-            const response = await axios.post(`${config.API_URL}/api/auth/login`, formData);
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            navigate('/dashboard');
+            const result = await login(formData.email, formData.password);
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                setError(result.message || 'Login failed. Please try again.');
+            }
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please try again.');
+            setError('An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);
         }
