@@ -1,0 +1,33 @@
+{
+    "github": {
+        "silent": true
+    },
+    "buildCommand": "cd client && npm install && npm run build",
+    "outputDirectory": "client/build",
+    "public": true,
+    "routes": [
+        {
+            "src": "/sitemap\\.xml",
+            "headers": {
+                "Content-Type": "application/xml"
+            },
+            "continue": true
+        },
+        {
+            "src": "/robots\\.txt",
+            "continue": true
+        },
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1"
+        },
+        {
+            "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot))",
+            "dest": "/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/index.html"
+        }
+    ]
+}
