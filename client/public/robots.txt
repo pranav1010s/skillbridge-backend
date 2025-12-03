@@ -11,4 +11,4 @@ Allow: /login
 Allow: /register
 
 # Sitemap location
-Sitemap: https://skillbridge-backend.vercel.app/sitemap.xml
+Sitemap: https://www.joinskillbridge.co.uk/sitemap.xml

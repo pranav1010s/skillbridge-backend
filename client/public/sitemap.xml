@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Landing Page -->
   <url>
-    <loc>https://skillbridge-backend.vercel.app/</loc>
+    <loc>https://www.joinskillbridge.co.uk/</loc>
     <lastmod>2025-12-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -10,7 +10,7 @@
   
   <!-- Login Page -->
   <url>
-    <loc>https://skillbridge-backend.vercel.app/login</loc>
+    <loc>https://www.joinskillbridge.co.uk/login</loc>
     <lastmod>2025-12-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -18,7 +18,7 @@
   
   <!-- Register Page -->
   <url>
-    <loc>https://skillbridge-backend.vercel.app/register</loc>
+    <loc>https://www.joinskillbridge.co.uk/register</loc>
     <lastmod>2025-12-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -26,7 +26,7 @@
   
   <!-- Dashboard (Note: requires authentication, but good for SEO visibility) -->
   <url>
-    <loc>https://skillbridge-backend.vercel.app/dashboard</loc>
+    <loc>https://www.joinskillbridge.co.uk/dashboard</loc>
     <lastmod>2025-12-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -34,7 +34,7 @@
   
   <!-- Profile Page -->
   <url>
-    <loc>https://skillbridge-backend.vercel.app/profile</loc>
+    <loc>https://www.joinskillbridge.co.uk/profile</loc>
     <lastmod>2025-12-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -42,7 +42,7 @@
   
   <!-- Onboarding Page -->
   <url>
-    <loc>https://skillbridge-backend.vercel.app/onboarding</loc>
+    <loc>https://www.joinskillbridge.co.uk/onboarding</loc>
     <lastmod>2025-12-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
