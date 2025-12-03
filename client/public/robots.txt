@@ -1,3 +1,14 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /onboarding
+Disallow: /cv-editor
+
+# Allow public pages
+Allow: /
+Allow: /login
+Allow: /register
+
+# Sitemap location
+Sitemap: https://skillbridge-backend.vercel.app/sitemap.xml
