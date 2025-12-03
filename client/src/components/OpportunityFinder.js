@@ -43,7 +43,9 @@ import config from '../config';
 const OpportunityFinder = () => {
   const { user } = useAuth();
   const [location, setLocation] = useState('');
-  const [radius, setRadius] = useState(10);
+  const [country, setCountry] = useState('');
+  const [rolePosition, setRolePosition] = useState('');
+  const [companySizeRange, setCompanySizeRange] = useState('51-100');
   const [jobTypes, setJobTypes] = useState([]);
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -57,12 +59,34 @@ const OpportunityFinder = () => {
   const [prompt, setPrompt] = useState('');
   const [selectedIndustries, setSelectedIndustries] = useState([]);
 
-  const jobTypeOptions = ['Internship', 'Part-time', 'Co-op', 'Project-based', 'Volunteer'];
+  const jobTypeOptions = ['Part-time', 'Full-time', 'Internship', 'Contract', 'Project-based'];
+
+  const companySizeOptions = [
+    '1-10',
+    '11-50',
+    '51-100',
+    '101-250',
+    '251-500',
+    '500+'
+  ];
+
+  const countryOptions = [
+    'United Kingdom',
+    'United States',
+    'Canada',
+    'Germany',
+    'France',
+    'Spain',
+    'Netherlands',
+    'Australia',
+    'India',
+    'Singapore'
+  ];
 
   const industryOptions = [
-    'Technology', 'Healthcare', 'Finance', 'Education', 'Manufacturing',
+    'Manufacturing', 'Technology', 'Healthcare', 'Finance', 'Education',
     'Retail', 'Construction', 'Transportation', 'Hospitality', 'Media',
-    'Real Estate', 'Legal', 'Consulting', 'Non-profit', 'Government',
+    'Real Estate', 'Legal Services', 'Consulting', 'Non-profit', 'Government',
     'Energy', 'Agriculture', 'Telecommunications', 'Automotive', 'Aerospace'
   ];
 
@@ -72,8 +96,8 @@ const OpportunityFinder = () => {
   };
 
   const handleSearch = async () => {
-    if (!location.trim()) {
-      setError('Please enter a location');
+    if (!location.trim() && !country) {
+      setError('Please enter a location or select a country');
       return;
     }
 
@@ -87,7 +111,9 @@ const OpportunityFinder = () => {
         `${config.API_URL}/api/opportunities/find`,
         {
           location: location.trim(),
-          radius,
+          country,
+          rolePosition: rolePosition.trim(),
+          companySizeRange,
           jobTypes,
           prompt: prompt.trim(),
           industries: selectedIndustries
@@ -102,7 +128,7 @@ const OpportunityFinder = () => {
 
       if (response.data.success) {
         setOpportunities(response.data.opportunities);
-        setSuccess(`Found ${response.data.opportunities.length} opportunities!`);
+        setSuccess(`Found ${response.data.opportunities.length} companies perfect for cold email outreach!`);
       }
     } catch (err) {
       console.error('Search error:', err);
@@ -129,7 +155,9 @@ const OpportunityFinder = () => {
           contactSuggestion: business.contactSuggestion,
           contactEmail: business.contactEmail,
           phone: business.phone,
-          industry: business.industry
+          industry: business.industry,
+          employeeCount: business.employeeCount || business.companySizeCategory,
+          decisionMaker: business.decisionMaker
         },
         {
           headers: {
@@ -231,19 +259,20 @@ const OpportunityFinder = () => {
                 letterSpacing: '-0.025em'
               }}
             >
-              AI Opportunity Finder
+              🎯 AI Cold Email Opportunity Finder
             </Typography>
             <Typography
               variant="h6"
               color="text.secondary"
               sx={{
-                maxWidth: '600px',
+                maxWidth: '700px',
                 mx: 'auto',
                 lineHeight: 1.6,
                 fontWeight: 400
               }}
             >
-              Find personalized opportunities based on your location, preferences, and career goals
+              Find small companies (50-100 employees) perfect for cold email outreach.
+              Target decision-makers directly and create your own opportunities!
             </Typography>
           </Box>
 
@@ -267,15 +296,55 @@ const OpportunityFinder = () => {
               />
             </Box>
 
-            {/* Row 2: Location, Radius, Job Types, Industries */}
-            <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
-              <Box sx={{ flex: '1 1 200px', minWidth: '180px' }}>
+            {/* Row 2: Role Position and Country */}
+            <Box sx={{ display: 'flex', gap: 3, mb: 3, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: '1 1 250px' }}>
                 <TextField
                   fullWidth
-                  label="Location"
+                  label="Role/Position You're Looking For"
+                  value={rolePosition}
+                  onChange={(e) => setRolePosition(e.target.value)}
+                  placeholder="e.g., Procurement Analyst, Marketing Intern"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      height: '56px'
+                    }
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ flex: '1 1 200px' }}>
+                <FormControl fullWidth>
+                  <InputLabel>Country</InputLabel>
+                  <Select
+                    value={country}
+                    onChange={(event) => setCountry(event.target.value)}
+                    label="Country"
+                    sx={{
+                      borderRadius: 2,
+                      height: '56px'
+                    }}
+                  >
+                    <MenuItem value="">
+                      <em>Any</em>
+                    </MenuItem>
+                    {countryOptions.map((c) => (
+                      <MenuItem key={c} value={c}>
+                        {c}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              <Box sx={{ flex: '1 1 180px' }}>
+                <TextField
+                  fullWidth
+                  label="City (Optional)"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="NYC"
+                  placeholder="e.g., Manchester"
                   InputProps={{
                     startAdornment: <LocationIcon sx={{ mr: 0.5, color: 'text.secondary' }} />
                   }}
@@ -283,39 +352,33 @@ const OpportunityFinder = () => {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
                       height: '56px'
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontSize: '0.875rem'
-                    },
-                    '& .MuiInputBase-input': {
-                      fontSize: '0.875rem'
                     }
                   }}
                 />
               </Box>
+            </Box>
 
-              <Box sx={{ flex: '1 1 120px', minWidth: '100px' }}>
-                <TextField
-                  fullWidth
-                  label="Radius"
-                  type="number"
-                  value={radius}
-                  onChange={(e) => setRadius(Number(e.target.value))}
-                  placeholder="10"
-                  inputProps={{ min: 1, max: 100 }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
+            {/* Row 3: Company Size, Job Types, Industries */}
+            <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: '1 1 160px', minWidth: '140px' }}>
+                <FormControl fullWidth>
+                  <InputLabel>Company Size</InputLabel>
+                  <Select
+                    value={companySizeRange}
+                    onChange={(event) => setCompanySizeRange(event.target.value)}
+                    label="Company Size"
+                    sx={{
                       borderRadius: 2,
                       height: '56px'
-                    },
-                    '& .MuiInputLabel-root': {
-                      fontSize: '0.875rem'
-                    },
-                    '& .MuiInputBase-input': {
-                      fontSize: '0.875rem'
-                    }
-                  }}
-                />
+                    }}
+                  >
+                    {companySizeOptions.map((size) => (
+                      <MenuItem key={size} value={size}>
+                        {size} employees
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
 
               <Box sx={{ flex: '1 1 160px', minWidth: '140px' }}>
@@ -347,10 +410,8 @@ const OpportunityFinder = () => {
                       return `${selected[0]} +${selected.length - 1}`;
                     }}
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        height: '56px'
-                      },
+                      borderRadius: 2,
+                      height: '56px',
                       '& .MuiSelect-select': {
                         fontSize: '0.875rem',
                         display: 'flex',
@@ -398,10 +459,8 @@ const OpportunityFinder = () => {
                       return `${selected[0]} +${selected.length - 1}`;
                     }}
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        height: '56px'
-                      },
+                      borderRadius: 2,
+                      height: '56px',
                       '& .MuiSelect-select': {
                         fontSize: '0.875rem',
                         display: 'flex',
@@ -446,7 +505,7 @@ const OpportunityFinder = () => {
                   transition: 'all 0.2s ease'
                 }}
               >
-                {loading ? 'Searching...' : 'Find Opportunities'}
+                {loading ? 'Searching...' : '🎯 Find Cold Email Targets'}
               </Button>
             </Box>
           </Box>
@@ -488,7 +547,7 @@ const OpportunityFinder = () => {
       {opportunities.length > 0 && (
         <Box sx={{ mb: 4 }}>
           <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-            Found Opportunities
+            🎯 Companies Perfect for Cold Email Outreach
           </Typography>
           {opportunities.map((business, index) => (
             <Accordion key={index} sx={{ mb: 2 }}>
@@ -500,7 +559,7 @@ const OpportunityFinder = () => {
                       {business.company || business.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {business.industry} • {business.location}
+                      {business.industry} • {business.employeeCount || business.companySizeCategory || 'Small (50-100)'} employees • {business.location}
                     </Typography>
                     {business.pitch && (
                       <Typography variant="body2" color="primary.main" sx={{ fontStyle: 'italic', mt: 0.5 }}>
@@ -508,27 +567,43 @@ const OpportunityFinder = () => {
                       </Typography>
                     )}
                   </Box>
-                  <Chip
-                    label={`${business.likelihood || 'High'} Match`}
-                    color={getLikelihoodColor(business.likelihood || 'High')}
-                    size="small"
-                    sx={{ mr: 2 }}
-                  />
+                  <Box sx={{ display: 'flex', gap: 1, mr: 2 }}>
+                    <Chip
+                      label={`${business.coldEmailScore || 'High'} Cold Email Score`}
+                      color={business.coldEmailScore === 'High' ? 'success' : business.coldEmailScore === 'Medium' ? 'warning' : 'default'}
+                      size="small"
+                    />
+                  </Box>
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={8}>
-                    {business.contactEmail && (
+                    {(business.website || business.linkedIn) && (
                       <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Contact Email:</strong> {business.contactEmail}
+                        <strong>Website:</strong> {business.website || business.linkedIn || 'N/A'}
                       </Typography>
                     )}
 
-                    {business.phone && (
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        <strong>Phone:</strong> {business.phone}
-                      </Typography>
+                    {business.decisionMaker && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body1" sx={{ mb: 0.5 }}>
+                          <strong>Decision Maker:</strong>
+                        </Typography>
+                        <Typography variant="body2" sx={{ ml: 2 }}>
+                          • Title: {business.decisionMaker.title || 'CEO/Hiring Manager'}
+                        </Typography>
+                        {business.decisionMaker.estimatedEmail && (
+                          <Typography variant="body2" sx={{ ml: 2 }}>
+                            • Email Format: {business.decisionMaker.estimatedEmail}
+                          </Typography>
+                        )}
+                        {business.decisionMaker.howToFind && (
+                          <Typography variant="body2" sx={{ ml: 2, fontStyle: 'italic', color: 'text.secondary' }}>
+                            {business.decisionMaker.howToFind}
+                          </Typography>
+                        )}
+                      </Box>
                     )}
 
                     <Typography variant="body1" sx={{ mb: 2 }}>
@@ -536,7 +611,7 @@ const OpportunityFinder = () => {
                     </Typography>
 
                     <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Why it's suitable:</strong> {business.whySuitable}
+                      <strong>Why Perfect for Cold Outreach:</strong> {business.whySuitableForColdEmail || business.whySuitable}
                     </Typography>
 
                     <Typography variant="body1" sx={{ mb: 2 }}>
@@ -548,9 +623,11 @@ const OpportunityFinder = () => {
                       ))}
                     </Box>
 
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Contact suggestion:</strong> {business.contactSuggestion}
-                    </Typography>
+                    {business.bestTimeToContact && (
+                      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+                        <strong>Best Time to Contact:</strong> {business.bestTimeToContact}
+                      </Typography>
+                    )}
                   </Grid>
 
                   <Grid item xs={12} md={4}>

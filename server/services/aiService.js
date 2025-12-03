@@ -422,10 +422,25 @@ Format as a conversational response.`;
 
     async findOpportunities(userProfile, criteria) {
         try {
-            const { location, radius, jobTypes, userPrompt, industries } = criteria;
+            const {
+                location,
+                radius,
+                jobTypes,
+                userPrompt,
+                industries,
+                rolePosition = '',
+                companySizeRange = '51-100',
+                country = ''
+            } = criteria;
 
             const prompt = `
-You are an expert career advisor and business analyst. Based on the comprehensive student profile below, find suitable businesses in the specified location that would be excellent targets for cold outreach.
+You are an expert career advisor specializing in COLD EMAIL OUTREACH for students seeking internships and part-time opportunities. Your task is to identify small companies that are perfect targets for cold emails.
+
+CRITICAL FOCUS: Find companies with 50-100 employees (or in the range: ${companySizeRange}). Smaller companies have:
+- More accessible decision makers
+- Higher response rates to cold emails
+- More flexibility in creating opportunities
+- Less bureaucratic hiring processes
 
 STUDENT PROFILE:
 - Name: ${userProfile.name}
@@ -435,37 +450,68 @@ STUDENT PROFILE:
 - Year: ${userProfile.year}
 - Skills: ${userProfile.skills.join(', ')}
 - GPA: ${userProfile.gpa}
-- Work Experience: ${userProfile.workExperience.map(exp => `${exp.position} at ${exp.company}`).join(', ') || 'None specified'}
+- Work Experience: ${userProfile.workExperience.map(exp => `${exp.position} at ${exp.company}`).join(', ') || 'Entry-level, seeking first opportunity'}
 - Projects: ${userProfile.projects.map(proj => proj.name).join(', ') || 'None specified'}
-- Certifications: ${userProfile.certifications.join(', ') || 'None specified'}
-- Languages: ${userProfile.languages.join(', ') || 'None specified'}
-- Interests: ${userProfile.interests.join(', ') || 'None specified'}
 
 SEARCH CRITERIA:
-- Location: ${location}
-- Search Radius: ${radius} miles
-- Preferred Job Types: ${jobTypes.length > 0 ? jobTypes.join(', ') : 'Any'}
-- User's Specific Request: ${userPrompt || 'General opportunities matching profile'}
-- Preferred Industries: ${industries.length > 0 ? industries.join(', ') : 'Any industry'}
+- What Student is Looking For: ${userPrompt || 'Opportunities matching profile and skills'}
+- Specific Role/Position: ${rolePosition || 'Flexible roles matching major and skills'}
+- Location/Country: ${country || location || 'Not specified'}
+- ${radius ? `Search Radius: ${radius} miles` : ''}
+- Preferred Job Types: ${jobTypes.length > 0 ? jobTypes.join(', ') : 'Part-time, Internship, or flexible arrangements'}
+- Target Industries: ${industries.length > 0 ? industries.join(', ') : 'Any industry open to student talent'}
+- **COMPANY SIZE REQUIREMENT: ${companySizeRange} employees** (STRICT - only include companies in this range)
 
-Please provide a JSON array of 10-15 suitable businesses with the following EXACT structure:
+PURPOSE: Find companies suitable for COLD EMAIL OUTREACH (not job board applications)
+
+REQUIREMENTS FOR EACH COMPANY:
+1. **Company Size**: Must be in the ${companySizeRange} employee range (verify this is realistic)
+2. **Cold Email Friendly**: Companies should be:
+   - Small enough that emails reach decision makers
+   - Growing or actively hiring in the past
+   - In industries that accept cold outreach
+   - Have identifiable decision makers (CEO, Operations Director, Hiring Manager)
+3. **Relevant to Student**: Match student's major, skills, or career interests
+4. **Contact Information**: Provide realistic company website and estimated decision maker details
+
+Return a JSON object with this EXACT structure:
 {
   "businesses": [
     {
-      "company": "Company Name",
-      "industry": "Industry type",
-      "contactEmail": "email@example.com",
-      "phone": "phone number",
-      "pitch": "Personalized pitch based on student CV",
-      "description": "Brief description of what they do",
-      "whySuitable": "Why this business is a good match",
-      "potentialRoles": ["Role 1", "Role 2"],
-      "contactSuggestion": "How to find the right person",
-      "likelihood": "High/Medium/Low",
-      "location": "${location}"
+      "company": "ABC Manufacturing Ltd",
+      "industry": "Manufacturing",
+      "employeeCount": "75",
+      "companySizeCategory": "51-100 employees",
+      "location": "${country || location}",
+      "website": "https://company.com",
+      "linkedIn": "https://linkedin.com/company/abc-manufacturing",
+      "description": "Brief description of what the company does",
+      "coldEmailScore": "High",
+      "decisionMaker": {
+        "title": "Operations Director",
+        "suggestedName": "Likely senior role title (don't invent specific names unless publicly available)",
+        "estimatedEmail": "Format: firstname.lastname@company.com or info@company.com",
+        "howToFind": "Check LinkedIn company page, company website team section, or call reception"
+      },
+      "whySuitableForColdEmail": "Specific reasons this company is perfect for cold outreach (size, growth, accessibility, industry fit)",
+      "potentialRoles": ["${rolePosition || 'Specific role 1'}", "Related role 2", "Related role 3"],
+      "pitch": "Personalized one-sentence pitch for why student should reach out to this company based on their CV",
+      "bestTimeToContact": "Early morning or early afternoon on Tuesday-Thursday",
+      "contactSuggestion": "Specific strategy for reaching out (email CEO directly, find operations manager on LinkedIn, etc.)",
+      "followUpStrategy": "Follow up after 3-5 days with additional value proposition or different angle",
+      "likelihood": "High"
     }
   ]
 }
+
+IMPORTANT RULES:
+1. **ONLY include companies with ${companySizeRange} employees** - this is critical for cold email success
+2. Provide 10-15 realistic companies (real or realistic-sounding companies in the specified location/industry)
+3. Each company must have HIGH potential for cold email response (small, accessible, relevant)
+4. Decision maker information should be realistic and helpful for finding contacts
+5. Focus on companies where student could genuinely add value
+6. coldEmailScore should be "High" for most results (since we're filtering for optimal targets)
+7. Make the "pitch" specific to both the company and the student's background
 
 Return ONLY the JSON object, no additional text.
 `;
@@ -484,10 +530,12 @@ Return ONLY the JSON object, no additional text.
 
     async generateColdEmail(userProfile, businessDetails) {
         try {
-            const { businessName, businessDescription, potentialRoles, contactSuggestion, contactEmail, phone, industry } = businessDetails;
+            const { businessName, businessDescription, potentialRoles, contactSuggestion, contactEmail, phone, industry, employeeCount, decisionMaker } = businessDetails;
 
             const prompt = `
-You are an expert at writing highly persuasive, personalized cold outreach emails for students. Create a compelling cold email that highlights how the student's specific background will benefit the company.
+You are an expert at writing COLD OUTREACH emails that get responses. This is NOT a response to a job posting - this is an unsolicited email to a small company where no opportunity has been advertised.
+
+CONTEXT: This is a COLD EMAIL to a small company (${employeeCount || '50-100'} employees). The student is proactively reaching out to create their own opportunity.
 
 STUDENT PROFILE:
 - Name: ${userProfile.name}
@@ -496,25 +544,73 @@ STUDENT PROFILE:
 - Major: ${userProfile.major}
 - Year: ${userProfile.year}
 - Skills: ${userProfile.skills.join(', ')}
-- Work Experience: ${userProfile.workExperience.map(exp => `${exp.position} at ${exp.company} (${exp.duration})`).join(', ') || 'None specified'}
-- Projects: ${userProfile.projects.map(proj => `${proj.name}: ${proj.description}`).join(', ') || 'None specified'}
+- Work Experience: ${userProfile.workExperience.map(exp => `${exp.position} at ${exp.company} (${exp.duration || 'recent'})`).join('; ') || 'Entry-level, eager to learn'}
+- Projects: ${userProfile.projects.map(proj => `${proj.name}: ${proj.description || ''}`).join('; ') || 'Academic projects and coursework'}
 
 TARGET COMPANY:
 - Company Name: ${businessName}
 - Industry: ${industry}
+- Company Size: ${employeeCount || '50-100'} employees (small company = more accessible)
 - Description: ${businessDescription}
 - Potential Roles: ${potentialRoles.join(', ')}
+${decisionMaker ? `- Decision Maker: ${decisionMaker.title || 'Hiring Manager'}` : ''}
 
-REQUIREMENTS:
-1. Subject line that grabs attention
-2. Personalized opening showing research
-3. Highlight 2-3 specific skills/experiences
-4. Show genuine enthusiasm
-5. Professional but conversational tone
-6. Clear call to action
-7. Keep under 250 words
+COLD EMAIL REQUIREMENTS:
 
-Return a complete, ready-to-send email template.
+1. **Subject Line** (Critical - determines if email is opened):
+   - Personal and specific to the company
+   - Creates curiosity or shows immediate value
+   - NOT generic like "Internship Inquiry"
+   - Examples: "${userProfile.major} Student - [Specific Value] for ${businessName}", "Quick Question About ${industry} at ${businessName}"
+   
+2. **Opening Line**:
+   - Show you've researched the company (mention something specific)
+   - Explain WHY you're reaching out to THEM specifically
+   - Make them curious to keep reading
+   
+3. **Value Proposition** (Lead with what you offer):
+   - Don't start with what you want
+   - Highlight 2-3 specific skills/experiences that match their industry
+   - Connect your background to their potential needs
+   - Be confident but humble
+   
+4. **The Ask** (Make it easy to say yes):
+   - Don't ask for a job directly
+   - Ask for a brief 15-minute call/coffee chat
+   - Offer flexibility with their schedule
+   - Make it low-pressure
+   
+5. **Closing**:
+   - Professional but warm
+   - Include ALL contact information
+   - One-line PS can increase response rate (optional)
+   
+6. **Tone**:
+   - Professional but conversational
+   - Confident but not entitled
+   - Genuine enthusiasm for the company/industry
+   - Keep it under 200 words (cold emails should be brief)
+
+7. **Follow-Up Strategy** (include at end):
+   - Suggest when to follow up (3-5 business days)
+   - Different angle for follow-up
+   - Alternative contact methods (LinkedIn, phone)
+
+FORMAT YOUR RESPONSE AS:
+
+--- SUBJECT LINE ---
+[Your compelling subject line]
+
+--- EMAIL BODY ---
+[Your email content]
+
+--- FOLLOW-UP STRATEGY ---
+[How and when to follow up if no response]
+
+--- TIPS ---
+[2-3 specific tips for this particular outreach]
+
+Create a complete, ready-to-send cold email that feels personal, professional, and gets responses.
 `;
 
             return await this._makeRequest([

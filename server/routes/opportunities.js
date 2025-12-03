@@ -9,10 +9,19 @@ const aiService = require('../services/aiService');
 // @access  Private
 router.post('/find', auth, async (req, res) => {
   try {
-    const { location, radius = 10, jobTypes = [], prompt = '', industries = [] } = req.body;
+    const {
+      location,
+      radius = 10,
+      jobTypes = [],
+      prompt = '',
+      industries = [],
+      rolePosition = '',
+      companySizeRange = '51-100',
+      country = ''
+    } = req.body;
 
-    if (!location) {
-      return res.status(400).json({ message: 'Location is required' });
+    if (!location && !country) {
+      return res.status(400).json({ message: 'Location or country is required' });
     }
 
     // Get user profile
@@ -21,7 +30,8 @@ router.post('/find', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('Finding opportunities for user:', user.firstName, 'in location:', location);
+    console.log('Finding cold email opportunities for user:', user.firstName);
+    console.log('Search criteria:', { location, country, rolePosition, companySizeRange, industries });
 
     // Build comprehensive user profile
     const userProfile = {
@@ -32,14 +42,23 @@ router.post('/find', auth, async (req, res) => {
       year: user.year || 'Not specified',
       skills: user.skills || [],
       gpa: user.gpa || 'Not specified',
-      workExperience: user.experience || [], // Note: User model uses 'experience', not 'workExperience'
+      workExperience: user.experience || [],
       projects: user.projects || [],
       certifications: user.certifications || [],
       languages: user.languages || [],
       interests: user.interests || []
     };
 
-    const criteria = { location, radius, jobTypes, userPrompt: prompt, industries };
+    const criteria = {
+      location,
+      radius,
+      jobTypes,
+      userPrompt: prompt,
+      industries,
+      rolePosition,
+      companySizeRange,
+      country
+    };
 
     // Generate business recommendations using AI Service
     const opportunities = await aiService.findOpportunities(userProfile, criteria);
@@ -80,7 +99,9 @@ router.post('/generate-email', auth, async (req, res) => {
       contactSuggestion = '',
       contactEmail = '',
       phone = '',
-      industry = ''
+      industry = '',
+      employeeCount = '',
+      decisionMaker = null
     } = req.body;
 
     if (!businessName) {
@@ -93,7 +114,7 @@ router.post('/generate-email', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('Generating enhanced email template for:', businessName);
+    console.log('Generating cold email template for:', businessName);
 
     const userProfile = {
       name: `${user.firstName} ${user.lastName}`,
@@ -116,7 +137,9 @@ router.post('/generate-email', auth, async (req, res) => {
       contactSuggestion,
       contactEmail,
       phone,
-      industry
+      industry,
+      employeeCount,
+      decisionMaker
     };
 
     // Generate enhanced CV-based cold email template using AI Service
