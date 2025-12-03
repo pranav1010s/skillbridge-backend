@@ -11,4 +11,4 @@ Allow: /login
 Allow: /register
 
 # Sitemap location
-Sitemap: https://www.joinskillbridge.co.uk/sitemap.xml
+Sitemap: https://raw.githubusercontent.com/pranav1010s/skillbridge-backend/main/client/public/sitemap.xml
