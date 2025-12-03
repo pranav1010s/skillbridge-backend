@@ -2,6 +2,20 @@
     "buildCommand": "npm run build",
     "outputDirectory": "build",
     "framework": "create-react-app",
+    "rewrites": [
+        {
+            "source": "/sitemap.xml",
+            "destination": "/sitemap.xml"
+        },
+        {
+            "source": "/robots.txt",
+            "destination": "/robots.txt"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ],
     "headers": [
         {
             "source": "/sitemap.xml",
