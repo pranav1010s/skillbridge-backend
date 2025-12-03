@@ -7,23 +7,13 @@
     "public": true,
     "routes": [
         {
+            "handle": "filesystem"
+        },
+        {
             "src": "/sitemap\\.xml",
             "headers": {
                 "Content-Type": "application/xml"
-            },
-            "continue": true
-        },
-        {
-            "src": "/robots\\.txt",
-            "continue": true
-        },
-        {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
-        },
-        {
-            "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot))",
-            "dest": "/$1"
+            }
         },
         {
             "src": "/(.*)",
