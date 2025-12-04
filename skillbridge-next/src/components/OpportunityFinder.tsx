@@ -580,7 +580,7 @@ const OpportunityFinder = () => {
               </AccordionSummary>
               <AccordionDetails>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={8}>
+                  <Grid xs={12} md={8}>
                     {(business.website || business.linkedIn) && (
                       <Typography variant="body1" sx={{ mb: 1 }}>
                         <strong>Website:</strong> {business.website || business.linkedIn || 'N/A'}
@@ -632,7 +632,7 @@ const OpportunityFinder = () => {
                     )}
                   </Grid>
 
-                  <Grid item xs={12} md={4}>
+                  <Grid xs={12} md={4}>
                     <Button
                       fullWidth
                       variant="contained"

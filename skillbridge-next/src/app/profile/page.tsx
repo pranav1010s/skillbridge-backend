@@ -1,9 +1,6 @@
 'use client';
-/* eslint-disable */
-// @ts-nocheck
 
-'use client';
-
+import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -51,7 +48,7 @@ import {
 
 const Profile = () => {
   const { user, updateUser, logout } = useAuth();
-  const navigate = useRouter();
+  const router = useRouter();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
   const [deleteWarningOpen, setDeleteWarningOpen] = useState(false);

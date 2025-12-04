@@ -1,9 +1,6 @@
 'use client';
-/* eslint-disable */
-// @ts-nocheck
 
-'use client';
-
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 import {
@@ -31,7 +28,7 @@ import {
 import Logo from '@/components/Logo';
 
 const LandingPage = () => {
-    const navigate = useRouter();
+    const router = useRouter();
     const [scrolled, setScrolled] = useState(false);
     const [visibleSections, setVisibleSections] = useState({
         features: false,

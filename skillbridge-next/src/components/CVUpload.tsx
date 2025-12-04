@@ -140,7 +140,7 @@ const CVUpload = () => {
         {parsedData && (
           <Grid container spacing={2}>
             {parsedData.personalInfo && (
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>Personal Information</Typography>
@@ -159,7 +159,7 @@ const CVUpload = () => {
             )}
 
             {parsedData.education && (
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>Education</Typography>
@@ -186,7 +186,7 @@ const CVUpload = () => {
             )}
 
             {parsedData.skills && parsedData.skills.length > 0 && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>Skills</Typography>
@@ -201,7 +201,7 @@ const CVUpload = () => {
             )}
 
             {parsedData.experience && parsedData.experience.length > 0 && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>Experience</Typography>
@@ -224,7 +224,7 @@ const CVUpload = () => {
             )}
 
             {parsedData.projects && parsedData.projects.length > 0 && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>Projects</Typography>
@@ -247,7 +247,7 @@ const CVUpload = () => {
             )}
 
             {parsedData.certifications && parsedData.certifications.length > 0 && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>Certifications</Typography>
@@ -268,7 +268,7 @@ const CVUpload = () => {
             )}
 
             {parsedData.languages && parsedData.languages.length > 0 && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h6" gutterBottom>Languages</Typography>

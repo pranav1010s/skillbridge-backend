@@ -1,9 +1,6 @@
 'use client';
-/* eslint-disable */
-// @ts-nocheck
 
-'use client';
-
+import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -139,7 +136,7 @@ const industries = [
 ];
 
 const Onboarding = () => {
-  const navigate = useRouter();
+  const router = useRouter();
   const { updateUser, user } = useAuth();
   const theme = useTheme();
   const [activeStep, setActiveStep] = useState(0);

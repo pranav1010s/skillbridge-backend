@@ -1,10 +1,7 @@
 'use client';
-/* eslint-disable */
-// @ts-nocheck
-
-'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Container,
   Typography,
@@ -53,7 +50,7 @@ import config from '@/config';
 
 const Dashboard = () => {
   const { user, updateUser, logout } = useAuth();
-  const navigate = useRouter();
+  const router = useRouter();
   const theme = useTheme();
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +68,7 @@ const Dashboard = () => {
     if (user && user.profileCompleted) {
       loadSavedJobs();
     }
-  }, [user, navigate]);
+  }, [user, router]);
 
   const loadSavedJobs = async () => {
     try {

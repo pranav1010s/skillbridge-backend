@@ -1,9 +1,6 @@
 'use client';
-/* eslint-disable */
-// @ts-nocheck
 
-'use client';
-
+import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,7 +26,7 @@ import {
 } from '@mui/icons-material';
 
 const Register = () => {
-  const navigate = useRouter();
+  const router = useRouter();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -447,18 +444,21 @@ const Register = () => {
           <Box className="fade-in-up delay-700" sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="body2" sx={{ color: '#64748b' }}>
               Already have an account?{' '}
-              <Link
-                to="/login"
-                style={{
+              <Typography
+                component="span"
+                onClick={() => router.push('/login')}
+                sx={{
                   color: '#667eea',
                   fontWeight: 700,
-                  textDecoration: 'none'
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    textDecoration: 'underline'
+                  }
                 }}
-                onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
-                onMouseOut={(e) => e.target.style.textDecoration = 'none'}
               >
                 Sign in here
-              </Link>
+              </Typography>
             </Typography>
           </Box>
         </Box>
