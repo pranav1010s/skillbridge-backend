@@ -1,5 +1,7 @@
+// Vercel Serverless Function to serve sitemap.xml
+// This bypasses static file routing issues
 module.exports = (req, res) => {
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- XML Sitemap generated 2025-12-04 -->
   <!-- Landing Page -->
@@ -51,6 +53,6 @@ module.exports = (req, res) => {
   </url>
 </urlset>`;
 
-    res.setHeader('Content-Type', 'application/xml');
-    res.status(200).send(sitemap);
+  res.setHeader('Content-Type', 'application/xml');
+  res.status(200).send(sitemap);
 };
