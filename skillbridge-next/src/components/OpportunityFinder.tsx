@@ -448,7 +448,10 @@ const OpportunityFinder = () => {
                   <Select
                     multiple
                     value={selectedIndustries}
-                    onChange={(event) => setSelectedIndustries(event.target.value)}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setSelectedIndustries(typeof value === 'string' ? value.split(',') : value);
+                    }}
                     input={<OutlinedInput label="Industries" />}
                     displayEmpty
                     renderValue={(selected) => {
