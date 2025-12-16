@@ -1,9 +1,10 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
+Allow: /
 Disallow: /dashboard
 Disallow: /profile
 Disallow: /onboarding
-Disallow: /cv-editor
+Disallow: /ai-cv-editor
 
 # Allow public pages
 Allow: /
