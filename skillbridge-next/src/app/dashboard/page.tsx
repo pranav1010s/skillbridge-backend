@@ -45,6 +45,9 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import CVUpload from '@/components/CVUpload';
 import OpportunityFinder from '@/components/OpportunityFinder';
+import ProfileCompletionCard from '@/components/ProfileCompletionCard';
+import NextStepsCard from '@/components/NextStepsCard';
+import AchievementBadges from '@/components/AchievementBadges';
 import axios from 'axios';
 import config from '@/config';
 
@@ -59,6 +62,7 @@ const Dashboard = () => {
   const [emailDialog, setEmailDialog] = useState({ open: false, job: null });
   const [emailTemplate, setEmailTemplate] = useState('');
   const [generatingEmail, setGeneratingEmail] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState(null);
 
   useEffect(() => {
     if (user && !user.profileCompleted) {
@@ -67,8 +71,22 @@ const Dashboard = () => {
     }
     if (user && user.profileCompleted) {
       loadSavedJobs();
+      loadProfileCompletion();
     }
   }, [user, router]);
+
+  const loadProfileCompletion = async () => {
+    try {
+      const response = await axios.get(`${config.API_URL}/api/users/profile/completion`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      setProfileCompletion(response.data.completion);
+    } catch (error) {
+      console.error('Error loading profile completion:', error);
+    }
+  };
 
   const loadSavedJobs = async () => {
     try {
@@ -388,11 +406,43 @@ const Dashboard = () => {
       </Box>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
+        {/* Profile Completion & Next Steps - Top Priority */}
+        {profileCompletion && (
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} lg={6}>
+              <ProfileCompletionCard
+                percentage={profileCompletion.percentage || 0}
+                missingFields={profileCompletion.missingFields || []}
+                isComplete={profileCompletion.isComplete || false}
+              />
+            </Grid>
+            <Grid item xs={12} lg={6}>
+              <NextStepsCard
+                nextSteps={profileCompletion.nextSteps || []}
+                profilePercentage={profileCompletion.percentage || 0}
+              />
+            </Grid>
+          </Grid>
+        )}
+
+        {/* Achievement Badges */}
+        {profileCompletion && (
+          <Box sx={{ mb: 4 }}>
+            <AchievementBadges
+              profilePercentage={profileCompletion.percentage || 0}
+              hasCV={!!user?.resumeUrl}
+              savedJobsCount={savedJobs.length}
+            />
+          </Box>
+        )}
+
         {/* CV Upload Section */}
         <CVUpload />
 
         {/* Opportunity Finder Section */}
-        <OpportunityFinder />
+        <div id="opportunities">
+          <OpportunityFinder />
+        </div>
 
 
         {/* Saved Jobs Section */}

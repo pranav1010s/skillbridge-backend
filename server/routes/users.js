@@ -2,6 +2,7 @@ const express = require('express');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const axios = require('axios');
+const { calculateProfileCompletion } = require('../utils/profileCompletion');
 
 const router = express.Router();
 
@@ -145,6 +146,28 @@ router.get('/profile', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get profile error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/users/profile/completion
+// @desc    Get profile completion status
+// @access  Private
+router.get('/profile/completion', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const completion = calculateProfileCompletion(user);
+
+    res.json({
+      success: true,
+      completion
+    });
+  } catch (error) {
+    console.error('Profile completion error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
