@@ -1,4 +1,4 @@
-# SkillBridge
+# SkillBridge - www.joinskillbridge.co.uk
 
 A web-based platform that bridges the gap between university students and local small-to-medium businesses (SMBs) offering relevant internships, part-time jobs, and project-based work.
 
